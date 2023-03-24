@@ -5,20 +5,18 @@ mod task_manager;
 
 use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
+use task::Status;
 use std::{env, fs::File, path::Path};
 use task_manager::TaskManager;
 
 fn main() {
-    let mut task_manager: TaskManager = TaskManager::new();
 
     let matches = command!()
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(
             Command::new("add")
-                .about("Add a new task")
-                .arg(arg!([TASK]))
-                .arg_required_else_help(true),
+                .about("Add a new task"),
         )
         .subcommand(
             Command::new("do")
@@ -49,17 +47,16 @@ fn main() {
     // TODO: Make the "do" command be an interactive CLI for marking tasks as done
 
     match matches.subcommand() {
-        Some(("add", sub_m)) => {
-            let task = sub_m.get_one::<String>("TASK").unwrap();
-            task_manager.add_task(task.to_string());
+        Some(("add", _sub_m)) => {
+            task_manager.add_task();
         }
         Some(("do", sub_m)) => {
             let id = sub_m.get_one::<u32>("ID").unwrap();
-            task_manager.mark_done(id);
+            task_manager.adjust_status(*id, Status::Done);
         }
         Some(("rm", sub_m)) => {
             let id = sub_m.get_one::<u32>("ID").unwrap();
-            task_manager.remove_task(id);
+            task_manager.remove_task(*id);
         }
         Some(("ls", _sub_m)) => {
             task_manager.list_tasks();

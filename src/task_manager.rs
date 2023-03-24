@@ -1,4 +1,4 @@
-use crate::task::{Task, Status};
+use crate::task::{Status, Task};
 
 pub struct TaskManager {
     pub tasks: Vec<Task>,
@@ -9,8 +9,78 @@ impl TaskManager {
         TaskManager { tasks: Vec::new() }
     }
 
-    pub fn add_task(&mut self, task: Task) {
-        self.tasks.push(task);
+    pub fn get_max_id(&self) -> u32 {
+        let mut max_id = 0;
+        for task in &self.tasks {
+            if task.id > max_id {
+                max_id = task.id;
+            }
+        }
+        max_id
+    }
+
+    pub fn add_task(&mut self) {
+        // Ask the user for input in the command line for
+        // each field of the task; make some fields optional
+        // and use default values for them
+        let mut task = Task::new();
+
+        // Find the highest id in the list of tasks and add 1 to it
+        // to get the id for the new task
+        task.id = self.get_max_id() + 1;
+
+        println!("Task:");
+        let mut description = String::new();
+        std::io::stdin().read_line(&mut description).unwrap();
+        task.description = description.trim().to_string();
+
+        println!("Tags:");
+        let mut tags = String::new();
+        std::io::stdin().read_line(&mut tags).unwrap();
+        task.tags = tags.trim().split(',').map(|s| s.to_string()).collect();
+
+        // Provide a set of options when the task is due based on the enum
+        // the user will select with a number
+        println!("Due:");
+        println!("1. Today");
+        println!("2. Tomorrow");
+        println!("3. This Week");
+        println!("4. This Month");
+        println!("5. This Year");
+        println!("6. Overdue");
+        let mut due = String::new();
+        std::io::stdin().read_line(&mut due).unwrap();
+        let due = due.trim().parse::<u32>().unwrap();
+        task.due = match due {
+            1 => "Today".to_string(),
+            2 => "Tomorrow".to_string(),
+            3 => "This Week".to_string(),
+            4 => "This Month".to_string(),
+            5 => "This Year".to_string(),
+            6 => "Overdue".to_string(),
+            _ => "Today".to_string(),
+        };
+
+        // Provide a set of options for the priority of the task
+        println!("Priority:");
+        println!("1. Low");
+        println!("2. Medium");
+        println!("3. High");
+        let mut priority = String::new();
+        std::io::stdin().read_line(&mut priority).unwrap();
+        let priority = priority.trim().parse::<u32>().unwrap();
+        task.priority = match priority {
+            1 => "Low".to_string(),
+            2 => "Medium".to_string(),
+            3 => "High".to_string(),
+            _ => "Low".to_string(),
+        };
+
+        // Set the task's status to "Todo"
+        task.status = Status::Todo;
+
+        // Set the task's timestamp to the current time
+        task.timestamp = chrono::Local::now().to_string();
     }
 
     pub fn list_tasks(&self) {
@@ -25,9 +95,12 @@ impl TaskManager {
         let _ = &self.tasks.retain(|task| task.id != id);
     }
 
-    pub fn mark_done(&mut self, id: u32) {
-        // Mark the id as done using functional programming
-        let _ = &self.tasks.iter_mut().find(|task| task.id == id).map(|task| task.status = Status::Done);
+    pub fn adjust_status(&mut self, id: u32, status: Status) {
+        // Adjust the status of the task with the given id
+        let task = self.tasks.iter_mut().find(|task| task.id == id).unwrap();
+
+        // Set the task's status to the given status
+        task.status = status;
     }
 
     pub fn list_by_tag(&self, tag: &str) {
@@ -48,9 +121,9 @@ impl TaskManager {
         }
     }
 
-    pub(crate) fn from_file(file_path: &str) -> Result<TaskManager,csv::Error> {
+    pub(crate) fn from_file(file_path: &str) -> Result<TaskManager, csv::Error> {
         // Read a CSV file and return a TaskManager
-        let mut tasks: Vec<Task>= Vec::new();
+        let mut tasks: Vec<Task> = Vec::new();
 
         let mut rdr = csv::Reader::from_path(file_path)?;
 
@@ -81,9 +154,8 @@ impl TaskManager {
             };
 
             tasks.push(task);
-        };
+        }
 
         Ok(TaskManager { tasks })
     }
 }
-
