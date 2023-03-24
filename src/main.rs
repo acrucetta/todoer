@@ -1,10 +1,12 @@
 // src/main.rs
 mod task;
+mod file_handler;
 mod task_manager;
 
 use std::{env, path::Path, fs::File};
-use task_manager::TaskManager;
 use clap::{arg, Command, command};
+use task_manager::TaskManager;
+use file_handler::{get_output_dir, save_tasks};
 
 fn main() {
     let mut task_manager: TaskManager = TaskManager::new();
@@ -70,9 +72,5 @@ fn main() {
         Err(e) => println!("Error saving tasks: {}", e),
     }
 
-}
-
-fn save_tasks(task_manager: &TaskManager, file_path: _) -> Result<_, _> {
-    todo!()
 }
 

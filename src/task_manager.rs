@@ -1,8 +1,7 @@
-// src/task_manager.rs
-use crate::task::{Status, Task};
+use crate::task::{Task, Status};
 
 pub struct TaskManager {
-    tasks: Vec<Task>,
+    pub tasks: Vec<Task>,
 }
 
 impl TaskManager {
@@ -49,7 +48,7 @@ impl TaskManager {
         }
     }
 
-    pub(crate) fn load(&self, file_path: _) -> _ {
+    pub(crate) fn load(&self, file_path: String) -> TaskManager {
         todo!()
     }
 }

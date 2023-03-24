@@ -13,5 +13,7 @@ pub struct Task {
 pub enum Status {
     Todo,
     Done,
+    Hold,
+    Blocked,
 }
 
