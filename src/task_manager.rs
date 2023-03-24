@@ -48,8 +48,42 @@ impl TaskManager {
         }
     }
 
-    pub(crate) fn load(&self, file_path: String) -> TaskManager {
-        todo!()
+    pub(crate) fn from_file(file_path: &str) -> Result<TaskManager,csv::Error> {
+        // Read a CSV file and return a TaskManager
+        let mut tasks: Vec<Task>= Vec::new();
+
+        let mut rdr = csv::Reader::from_path(file_path)?;
+
+        for result in rdr.records() {
+            let record = result?;
+            let id: u32 = record[0].parse().unwrap();
+            let description: String = record[1].to_string();
+            let tags: Vec<String> = record[2].split(',').map(|s| s.to_string()).collect();
+            let due: String = record[3].to_string();
+            let timestamp: String = record[4].to_string();
+            let priority: String = record[5].to_string();
+            let status: Status = match record[6].as_ref() {
+                "Todo" => Status::Todo,
+                "Done" => Status::Done,
+                "Hold" => Status::Hold,
+                "Blocked" => Status::Blocked,
+                _ => Status::Todo,
+            };
+
+            let task = Task {
+                id,
+                description,
+                tags,
+                due,
+                timestamp,
+                priority,
+                status,
+            };
+
+            tasks.push(task);
+        };
+
+        Ok(TaskManager { tasks })
     }
 }
 
