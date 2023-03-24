@@ -44,6 +44,9 @@ fn main() {
             TaskManager::new()
         }
     };
+    
+    // TODO: Make the "add" command be an interactive CLI for adding tasks
+    // TODO: Make the "do" command be an interactive CLI for marking tasks as done
 
     match matches.subcommand() {
         Some(("add", sub_m)) => {
