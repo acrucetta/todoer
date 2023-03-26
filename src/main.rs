@@ -5,7 +5,7 @@ mod task_manager;
 
 use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
-use std::{env, fs::File, path::Path};
+use std::{env};
 use task::Status;
 use task_manager::TaskManager;
 
@@ -50,8 +50,8 @@ fn main() {
             task_manager.add_task(&task);
         }
         Some(("do", sub_m)) => {
-            let id = sub_m.get_one::<u32>("ID").unwrap();
-            task_manager.adjust_status(*id, Status::Done);
+            let id = sub_m.get_one::<String>("ID").unwrap();
+            task_manager.adjust_status(id.parse::<u32>().unwrap(), Status::Done);
         }
         Some(("rm", sub_m)) => {
             let id = sub_m.get_one::<String>("ID").unwrap();

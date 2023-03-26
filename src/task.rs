@@ -1,5 +1,5 @@
-use core::{fmt, time};
-use std::{time::SystemTime, error::Error};
+use core::{fmt};
+use std::{time::SystemTime};
 
 pub struct Task {
     pub id: u32,
