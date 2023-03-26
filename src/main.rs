@@ -54,8 +54,8 @@ fn main() {
             task_manager.adjust_status(*id, Status::Done);
         }
         Some(("rm", sub_m)) => {
-            let id = sub_m.get_one::<u32>("ID").unwrap();
-            task_manager.remove_task(*id);
+            let id = sub_m.get_one::<String>("ID").unwrap();
+            task_manager.remove_task(id.parse::<u32>().unwrap());
         }
         Some(("ls", _sub_m)) => {
             task_manager.list_tasks();

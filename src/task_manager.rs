@@ -1,6 +1,5 @@
 use std::{
     io::{self, Write},
-    time::SystemTime,
 };
 
 use crate::task::{Due, Priority, Status, Task};
