@@ -115,9 +115,6 @@ pub enum Due {
     Tomorrow,
     ThisWeek,
     Sometime,
-    ThisMonth,
-    ThisYear,
-    Overdue,
 }
 
 impl fmt::Display for Due {
@@ -126,9 +123,6 @@ impl fmt::Display for Due {
             Due::Today => write!(f, "Today"),
             Due::Tomorrow => write!(f, "Tomorrow"),
             Due::ThisWeek => write!(f, "This week"),
-            Due::ThisMonth => write!(f, "This month"),
-            Due::ThisYear => write!(f, "This year"),
-            Due::Overdue => write!(f, "Overdue"),
             Due::Sometime => write!(f, "Sometime"),
         }
     }
@@ -140,9 +134,6 @@ impl Due {
             Due::Today => "Today".to_string(),
             Due::Tomorrow => "Tomorrow".to_string(),
             Due::ThisWeek => "ThisWeek".to_string(),
-            Due::ThisMonth => "ThisMonth".to_string(),
-            Due::ThisYear => "ThisYear".to_string(),
-            Due::Overdue => "Overdue".to_string(),
             Due::Sometime => "Sometime".to_string(),
         }
     }

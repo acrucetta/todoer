@@ -103,10 +103,10 @@ impl TaskManager {
     }
 
     pub fn list_by_tag(&self, tag: &str) {
-        // Print the list of tasks to the console
+        print!("ID, Description, Due, Tags\n");
         for task in &self.tasks {
             if task.tags.contains(&tag.to_string()) {
-                println!("{}, {}, {}", task.id, task.description, task.due);
+                println!("{}, {}, {}, {}", task.id, task.description, task.due, task.tags.join(", "));
             }
         }
     }

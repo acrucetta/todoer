@@ -5,7 +5,7 @@ mod task_manager;
 
 use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
-use std::{env};
+use std::env;
 use task::Status;
 use task_manager::TaskManager;
 
@@ -31,7 +31,12 @@ fn main() {
                 .arg(arg!([ID]))
                 .arg_required_else_help(true),
         )
-        .subcommand(Command::new("ls").about("List all tasks"))
+        .subcommand(
+            Command::new("ls")
+                .about("List all tasks")
+                .arg(arg!(--tag[TAG]))
+                .arg(arg!(--status[STATUS])),
+        )
         .get_matches();
 
     let file_path = format!("{}/tasks.csv", get_output_dir());
@@ -57,9 +62,10 @@ fn main() {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.remove_task(id.parse::<u32>().unwrap());
         }
-        Some(("ls", _sub_m)) => {
-            task_manager.list_tasks();
-        }
+        Some(("ls", sub_m)) => match sub_m.get_one::<String>("TAG") {
+            Some(tag) => task_manager.list_by_tag(&tag),
+            None => task_manager.list_tasks(),
+        },
         _ => unreachable!(),
     }
 
