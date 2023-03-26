@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <title>To-Do List</title>
+</head>
+<body>
+  <h1>To-Do List</h1>
+  <input type="file" id="csv-file" accept=".csv">
+  <form id="add-task-form">
+    <input type="text" id="task-name" placeholder="Task Name">
+    <input type="text" id="task-tag" placeholder="Task Tag">
+    <select id="task-status">
+      <option value="Pending">Pending</option>
+      <option value="Completed">Completed</option>
+    </select>
+    <button type="submit">Add Task</button>
+  </form>
+  <form id="filter-tasks-form">
+    <input type="text" id="filter-tag" placeholder="Filter by Tag">
+    <select id="filter-status">
+      <option value="">Filter by Status</option>
+      <option value="Pending">Pending</option>
+      <option value="Completed">Completed</option>
+    </select>
+    <button type="submit">Filter</button>
+  </form>
+  <table id="task-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Tag</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script src="scripts.js"></script>
+</body>
+</html>
