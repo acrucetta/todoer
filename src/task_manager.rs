@@ -78,12 +78,13 @@ impl TaskManager {
         // Set the task's status to "Todo"
         task.status = Status::Todo;
 
-        // Append the task to the list of tasks
+        // Push the task to the list of tasks
         self.tasks.push(task);
     }
 
     pub fn list_tasks(&self) {
         // Print the list of tasks to the console
+        print!("ID, Description, Due \n");
         for task in &self.tasks {
             println!("{}, {}, {}", task.id, task.description, task.due);
         }
@@ -124,50 +125,30 @@ impl TaskManager {
         // Read a CSV file and return a TaskManager
         let mut tasks: Vec<Task> = Vec::new();
 
-        let mut rdr = csv::Reader::from_path(file_path)?;
+        // Read the CSV file
+        let rdr = csv::ReaderBuilder::new()
+            .has_headers(false)
+            .from_path(file_path);
+
+        let mut rdr = match rdr {
+            Ok(r) => r,
+            Err(e) => {
+                println!("Error: {}", e);
+                return Ok(TaskManager::new());
+            }
+        };
 
         for result in rdr.records() {
             let record = result?;
-            let id: u32 = record[0].parse().unwrap();
-            let description: String = record[1].to_string();
-            let tags: Vec<String> = record[2].split(',').map(|s| s.to_string()).collect();
-            let due: Due = match record[3].as_ref() {
-                "Today" => Due::Today,
-                "Tomorrow" => Due::Tomorrow,
-                "ThisWeek" => Due::ThisWeek,
-                "Sometime" => Due::Sometime,
-                _ => Due::Sometime,
-            };
-            // Conver the String timestamp to a SystemTime
-            let timestamp: SystemTime =
-                SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(record[4].parse().unwrap());
-            let priority: Priority = match record[5].as_ref() {
-                "Low" => Priority::Low,
-                "Medium" => Priority::Medium,
-                "High" => Priority::High,
-                _ => Priority::Low,
-            };
-            let status: Status = match record[6].as_ref() {
-                "Todo" => Status::Todo,
-                "Done" => Status::Done,
-                "Hold" => Status::Hold,
-                "Blocked" => Status::Blocked,
-                _ => Status::Todo,
-            };
-
-            let task = Task {
-                id,
-                description,
-                tags,
-                due,
-                timestamp,
-                priority,
-                status,
-            };
-
+            if record.get(0).unwrap() == "id" {
+                continue;
+            }
+            if record.len() == 0 {
+                continue;
+            } 
+            let task = Task::from_record(record);
             tasks.push(task);
         }
-
         Ok(TaskManager { tasks })
     }
 }

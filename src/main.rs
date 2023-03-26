@@ -44,9 +44,6 @@ fn main() {
         }
     };
 
-    // TODO: Make the "add" command be an interactive CLI for adding tasks
-    // TODO: Make the "do" command be an interactive CLI for marking tasks as done
-
     match matches.subcommand() {
         Some(("add", sub_m)) => {
             let task = sub_m.get_one::<String>("TASK").unwrap();
@@ -67,7 +64,7 @@ fn main() {
     }
 
     match save_tasks(&file_path, task_manager) {
-        Ok(_) => println!("Tasks saved successfully"),
-        Err(e) => println!("Error saving tasks: {}", e),
+        Ok(_) => println!(""),
+        Err(e) => eprintln!("Error saving tasks: {}", e),
     }
 }

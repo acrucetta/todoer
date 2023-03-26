@@ -1,5 +1,5 @@
-use core::{time, fmt};
-use std::time::SystemTime;
+use core::{fmt, time};
+use std::{time::SystemTime, error::Error};
 
 pub struct Task {
     pub id: u32,
@@ -21,6 +21,36 @@ impl Task {
             priority: Priority::Low,
             status: Status::Todo,
         }
+    }
+
+    pub(crate) fn from_record(record: csv::StringRecord) -> Task {
+        let task = Task {
+            id: record.get(0).unwrap().parse().unwrap(),
+            description: record[1].to_string(),
+            tags: record[2].split(',').map(|s| s.to_string()).collect(),
+            due: match record[3].as_ref() {
+                "Today" => Due::Today,
+                "Tomorrow" => Due::Tomorrow,
+                "ThisWeek" => Due::ThisWeek,
+                "Sometime" => Due::Sometime,
+                _ => Due::Sometime,
+            },
+            timestamp: SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(record[4].parse().unwrap()),
+            priority: match record[5].as_ref() {
+                "Low" => Priority::Low,
+                "Medium" => Priority::Medium,
+                "High" => Priority::High,
+                _ => Priority::Low,
+            },
+            status: match record[6].as_ref() {
+                "Todo" => Status::Todo,
+                "Blocked" => Status::Blocked,
+                "Done" => Status::Done,
+                "Hold" => Status::Hold,
+                _ => Status::Todo,
+            },
+        };
+        task
     }
 }
 
@@ -80,7 +110,6 @@ impl Status {
     }
 }
 
-
 pub enum Due {
     Today,
     Tomorrow,
@@ -100,7 +129,7 @@ impl fmt::Display for Due {
             Due::ThisMonth => write!(f, "This month"),
             Due::ThisYear => write!(f, "This year"),
             Due::Overdue => write!(f, "Overdue"),
-            Due::Sometime => todo!(),
+            Due::Sometime => write!(f, "Sometime"),
         }
     }
 }
@@ -118,4 +147,3 @@ impl Due {
         }
     }
 }
-

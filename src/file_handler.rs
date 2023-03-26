@@ -30,10 +30,7 @@ pub fn save_tasks(file_path: &str, task_manager: TaskManager) -> Result<(), csv:
         "status",
     ])?;
 
-
     for task in task_manager.tasks {
-        print!("Saving task: {}...", task.id);
-
         writer.write_record(&[
             &task.id.to_string(),
             &task.description,
