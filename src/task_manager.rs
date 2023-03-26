@@ -1,5 +1,6 @@
 use std::{
-    io::{self, Write}, time::SystemTime,
+    io::{self, Write},
+    time::SystemTime,
 };
 
 use crate::task::{Due, Priority, Status, Task};
@@ -23,11 +24,12 @@ impl TaskManager {
         max_id
     }
 
-    pub fn add_task(&mut self) {
+    pub fn add_task(&mut self, description: &String) {
         // Ask the user for input in the command line for
         // each field of the task; make some fields optional
         // and use default values for them
         let mut task = Task::new();
+        task.description = description.to_string();
         task.id = self.get_max_id() + 1;
 
         println!("Tag: ");
@@ -46,16 +48,15 @@ impl TaskManager {
         println!("3. This Week");
         println!("4. Sometime");
         let mut due = String::new();
-        std::io::stdin().read_line(&mut due).unwrap();
-        let due = due.trim().parse::<u32>().unwrap();
-
-        // Set the task's due date based on the user's input
-        task.due = match due {
-            1 => Due::Today,
-            2 => Due::Tomorrow,
-            3 => Due::ThisWeek,
-            4 => Due::Sometime,
-            _ => Due::Sometime,
+        std::io::stdin()
+            .read_line(&mut due)
+            .expect("Failed to read line");
+        match due.trim().parse::<u32>() {
+            Ok(1) => task.due = Due::Today,
+            Ok(2) => task.due = Due::Tomorrow,
+            Ok(3) => task.due = Due::ThisWeek,
+            Ok(4) => task.due = Due::Sometime,
+            _ => task.due = Due::Sometime,
         };
 
         // Provide a set of options for the priority of the task
@@ -64,17 +65,21 @@ impl TaskManager {
         println!("2. Medium");
         println!("3. High");
         let mut priority = String::new();
-        std::io::stdin().read_line(&mut priority).unwrap();
-        let priority = priority.trim().parse::<u32>().unwrap();
-        task.priority = match priority {
-            1 => Priority::Low,
-            2 => Priority::Medium,
-            3 => Priority::High,
-            _ => Priority::Low,
+        std::io::stdin()
+            .read_line(&mut priority)
+            .expect("Failed to read line");
+        match priority.trim().parse::<u32>() {
+            Ok(1) => task.priority = Priority::Low,
+            Ok(2) => task.priority = Priority::Medium,
+            Ok(3) => task.priority = Priority::High,
+            _ => task.priority = Priority::Low,
         };
 
         // Set the task's status to "Todo"
         task.status = Status::Todo;
+
+        // Append the task to the list of tasks
+        self.tasks.push(task);
     }
 
     pub fn list_tasks(&self) {
@@ -134,7 +139,8 @@ impl TaskManager {
                 _ => Due::Sometime,
             };
             // Conver the String timestamp to a SystemTime
-            let timestamp: SystemTime = SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(record[4].parse().unwrap());
+            let timestamp: SystemTime =
+                SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(record[4].parse().unwrap());
             let priority: Priority = match record[5].as_ref() {
                 "Low" => Priority::Low,
                 "Medium" => Priority::Medium,
