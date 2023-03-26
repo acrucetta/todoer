@@ -32,20 +32,14 @@ pub fn save_tasks(file_path: &str, task_manager: TaskManager) -> Result<(), csv:
 
     for task in task_manager.tasks {
 
-        let status = match task.status {
-            crate::task::Status::Todo => "Todo".to_string(),
-            crate::task::Status::Done => "Done".to_string(),
-            crate::task::Status::Blocked => "Blocked".to_string(),
-            crate::task::Status::Hold => "Hold".to_string(),
-        };
         writer.write_record(&[
             &task.id.to_string(),
             &task.description,
             &task.tags.join(","),
-            &task.due,
-            &task.timestamp,
+            &task.due.to_string(),
+            &task.timestamp.duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_secs().to_string(),
             &task.priority.to_string(),
-            &status,
+            &task.status.to_string(),
         ])?;
     }
 

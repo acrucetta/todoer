@@ -1,4 +1,8 @@
-use crate::task::{Status, Task};
+use std::{
+    io::{self, Write}, time::SystemTime,
+};
+
+use crate::task::{Due, Priority, Status, Task};
 
 pub struct TaskManager {
     pub tasks: Vec<Task>,
@@ -24,19 +28,14 @@ impl TaskManager {
         // each field of the task; make some fields optional
         // and use default values for them
         let mut task = Task::new();
-
-        // Find the highest id in the list of tasks and add 1 to it
-        // to get the id for the new task
         task.id = self.get_max_id() + 1;
 
-        println!("Task:");
-        let mut description = String::new();
-        std::io::stdin().read_line(&mut description).unwrap();
-        task.description = description.trim().to_string();
-
-        println!("Tags:");
+        println!("Tag: ");
+        io::stdout().flush().unwrap();
         let mut tags = String::new();
-        std::io::stdin().read_line(&mut tags).unwrap();
+        io::stdin()
+            .read_line(&mut tags)
+            .expect("Failed to read line");
         task.tags = tags.trim().split(',').map(|s| s.to_string()).collect();
 
         // Provide a set of options when the task is due based on the enum
@@ -45,20 +44,18 @@ impl TaskManager {
         println!("1. Today");
         println!("2. Tomorrow");
         println!("3. This Week");
-        println!("4. This Month");
-        println!("5. This Year");
-        println!("6. Overdue");
+        println!("4. Sometime");
         let mut due = String::new();
         std::io::stdin().read_line(&mut due).unwrap();
         let due = due.trim().parse::<u32>().unwrap();
+
+        // Set the task's due date based on the user's input
         task.due = match due {
-            1 => "Today".to_string(),
-            2 => "Tomorrow".to_string(),
-            3 => "This Week".to_string(),
-            4 => "This Month".to_string(),
-            5 => "This Year".to_string(),
-            6 => "Overdue".to_string(),
-            _ => "Today".to_string(),
+            1 => Due::Today,
+            2 => Due::Tomorrow,
+            3 => Due::ThisWeek,
+            4 => Due::Sometime,
+            _ => Due::Sometime,
         };
 
         // Provide a set of options for the priority of the task
@@ -70,17 +67,14 @@ impl TaskManager {
         std::io::stdin().read_line(&mut priority).unwrap();
         let priority = priority.trim().parse::<u32>().unwrap();
         task.priority = match priority {
-            1 => "Low".to_string(),
-            2 => "Medium".to_string(),
-            3 => "High".to_string(),
-            _ => "Low".to_string(),
+            1 => Priority::Low,
+            2 => Priority::Medium,
+            3 => Priority::High,
+            _ => Priority::Low,
         };
 
         // Set the task's status to "Todo"
         task.status = Status::Todo;
-
-        // Set the task's timestamp to the current time
-        task.timestamp = chrono::Local::now().to_string();
     }
 
     pub fn list_tasks(&self) {
@@ -132,9 +126,21 @@ impl TaskManager {
             let id: u32 = record[0].parse().unwrap();
             let description: String = record[1].to_string();
             let tags: Vec<String> = record[2].split(',').map(|s| s.to_string()).collect();
-            let due: String = record[3].to_string();
-            let timestamp: String = record[4].to_string();
-            let priority: String = record[5].to_string();
+            let due: Due = match record[3].as_ref() {
+                "Today" => Due::Today,
+                "Tomorrow" => Due::Tomorrow,
+                "ThisWeek" => Due::ThisWeek,
+                "Sometime" => Due::Sometime,
+                _ => Due::Sometime,
+            };
+            // Conver the String timestamp to a SystemTime
+            let timestamp: SystemTime = SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(record[4].parse().unwrap());
+            let priority: Priority = match record[5].as_ref() {
+                "Low" => Priority::Low,
+                "Medium" => Priority::Medium,
+                "High" => Priority::High,
+                _ => Priority::Low,
+            };
             let status: Status = match record[6].as_ref() {
                 "Todo" => Status::Todo,
                 "Done" => Status::Done,
