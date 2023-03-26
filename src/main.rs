@@ -62,9 +62,23 @@ fn main() {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.remove_task(id.parse::<u32>().unwrap());
         }
-        Some(("ls", sub_m)) => match sub_m.get_one::<String>("TAG") {
-            Some(tag) => task_manager.list_by_tag(&tag),
-            None => task_manager.list_tasks(),
+        Some(("ls", sub_m)) => {
+            let tag = sub_m.get_one::<String>("tag");
+            let status = sub_m.get_one::<String>("status");
+            if tag.is_some() {
+                task_manager.list_by_tag(&tag.unwrap());
+            } else if status.is_some() {
+                let status = match status.unwrap().as_str() {
+                    "done" => Status::Done,
+                    "todo" => Status::Todo,
+                    "blocked" => Status::Blocked,
+                    "hold" => Status::Hold,
+                    _ => Status::Todo,
+                };
+                task_manager.list_by_status(status);
+            } else {
+                task_manager.list_tasks();
+            }
         },
         _ => unreachable!(),
     }

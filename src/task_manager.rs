@@ -83,9 +83,9 @@ impl TaskManager {
 
     pub fn list_tasks(&self) {
         // Print the list of tasks to the console
-        print!("ID, Description, Due \n");
+        print!("ID, Description, Due, Status\n");
         for task in &self.tasks {
-            println!("{}, {}, {}", task.id, task.description, task.due);
+            println!("{}, {}, {}, {}", task.id, task.description, task.due, task.status);
         }
     }
 
@@ -103,19 +103,20 @@ impl TaskManager {
     }
 
     pub fn list_by_tag(&self, tag: &str) {
-        print!("ID, Description, Due, Tags\n");
+        print!("ID, Description, Status, Due, Tags\n");
         for task in &self.tasks {
             if task.tags.contains(&tag.to_string()) {
-                println!("{}, {}, {}, {}", task.id, task.description, task.due, task.tags.join(", "));
+                println!("{}, {}, {}, {}, {}", task.id, task.description, task.status, task.due, task.tags.join(", "));
             }
         }
     }
 
     pub fn list_by_status(&self, status: Status) {
         // Print the list of tasks to the console
+        print!("Description, Status, Due, Tags\n");
         for task in &self.tasks {
             if task.status == status {
-                println!("{}, {}, {}", task.id, task.description, task.due);
+                println!("{}, {}, {}, {}, {}", task.id, task.description, task.status, task.due, task.tags.join(", "));
             }
         }
     }
