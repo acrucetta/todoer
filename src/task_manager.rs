@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     io::{self, Write},
 };
 
@@ -81,14 +82,6 @@ impl TaskManager {
         self.tasks.push(task);
     }
 
-    pub fn list_tasks(&self) {
-        // Print the list of tasks to the console
-        print!("ID, Description, Due, Status\n");
-        for task in &self.tasks {
-            println!("{}, {}, {}, {}", task.id, task.description, task.due, task.status);
-        }
-    }
-
     pub fn remove_task(&mut self, id: u32) {
         // Remove the task with the given id
         let _ = &self.tasks.retain(|task| task.id != id);
@@ -102,21 +95,44 @@ impl TaskManager {
         task.status = status;
     }
 
-    pub fn list_by_tag(&self, tag: &str) {
-        print!("ID, Description, Status, Due, Tags\n");
-        for task in &self.tasks {
-            if task.tags.contains(&tag.to_string()) {
-                println!("{}, {}, {}, {}, {}", task.id, task.description, task.status, task.due, task.tags.join(", "));
-            }
-        }
-    }
-
-    pub fn list_by_status(&self, status: Status) {
-        // Print the list of tasks to the console
+    pub fn list_tasks(&self, filters: HashMap<&str, &str>) {
         print!("Description, Status, Due, Tags\n");
         for task in &self.tasks {
-            if task.status == status {
-                println!("{}, {}, {}, {}, {}", task.id, task.description, task.status, task.due, task.tags.join(", "));
+            let mut found = true;
+            for (key, value) in &filters {
+                match key {
+                    &"description" => {
+                        if !task.description.contains(value) {
+                            found = false;
+                        }
+                    }
+                    &"status" => {
+                        if task.status.to_string() != *value {
+                            found = false;
+                        }
+                    }
+                    &"due" => {
+                        if task.due.to_string() != *value {
+                            found = false;
+                        }
+                    }
+                    &"tags" => {
+                        if !task.tags.contains(&value.to_string()) {
+                            found = false;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            if found {
+                println!(
+                    "{}, {}, {}, {}, {}",
+                    task.id,
+                    task.description,
+                    task.status,
+                    task.due,
+                    task.tags.join(", ")
+                );
             }
         }
     }
@@ -145,7 +161,7 @@ impl TaskManager {
             }
             if record.len() == 0 {
                 continue;
-            } 
+            }
             let task = Task::from_record(record);
             tasks.push(task);
         }

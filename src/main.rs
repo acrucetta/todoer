@@ -5,7 +5,7 @@ mod task_manager;
 
 use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
-use std::env;
+use std::{env, collections::HashMap};
 use task::Status;
 use task_manager::TaskManager;
 
@@ -65,21 +65,24 @@ fn main() {
         Some(("ls", sub_m)) => {
             let tag = sub_m.get_one::<String>("tag");
             let status = sub_m.get_one::<String>("status");
-            if tag.is_some() {
-                task_manager.list_by_tag(&tag.unwrap());
-            } else if status.is_some() {
-                let status = match status.unwrap().as_str() {
-                    "done" => Status::Done,
-                    "todo" => Status::Todo,
-                    "blocked" => Status::Blocked,
-                    "hold" => Status::Hold,
-                    _ => Status::Todo,
-                };
-                task_manager.list_by_status(status);
-            } else {
-                task_manager.list_tasks();
+            let due = sub_m.get_one::<String>("due");
+            let priority = sub_m.get_one::<String>("priority");
+            
+            let mut filters = HashMap::new();
+            if let Some(tag) = tag {
+                filters.insert("tag", tag.as_str());
             }
-        },
+            if let Some(status) = status {
+                filters.insert("status", status.as_str());
+            }
+            if let Some(due) = due {
+                filters.insert("due", due.as_str());
+            }
+            if let Some(priority) = priority {
+                filters.insert("priority", priority.as_str());
+            }
+            task_manager.list_tasks(filters);
+        }
         _ => unreachable!(),
     }
 

@@ -3,41 +3,59 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.6/build/pure-min.css">
   <link rel="stylesheet" href="styles.css">
-  <title>To-Do List</title>
+  <title>Minimal To-do List</title>
 </head>
 <body>
-  <h1>To-Do List</h1>
-  <input type="file" id="csv-file" accept=".csv">
-  <form id="add-task-form">
-    <input type="text" id="task-name" placeholder="Task Name">
-    <input type="text" id="task-tag" placeholder="Task Tag">
-    <select id="task-status">
-      <option value="Pending">Pending</option>
-      <option value="Completed">Completed</option>
-    </select>
-    <button type="submit">Add Task</button>
-  </form>
-  <form id="filter-tasks-form">
-    <input type="text" id="filter-tag" placeholder="Filter by Tag">
-    <select id="filter-status">
-      <option value="">Filter by Status</option>
-      <option value="Pending">Pending</option>
-      <option value="Completed">Completed</option>
-    </select>
-    <button type="submit">Filter</button>
-  </form>
-  <table id="task-table">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Tag</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <script src="scripts.js"></script>
+  <div class="container">
+    <h1>To-do List</h1>
+    <form id="task-form" class="pure-form pure-form-stacked">
+      <fieldset>
+        <label for="task-description">Description:</label>
+        <input id="task-description" type="text" required>
+        <label for="task-tags">Tags (semicolon-separated):</label>
+        <input id="task-tags" type="text">
+        <label for="task-due">Due:</label>
+        <select id="task-due">
+          <option>Today</option>
+          <option>Tomorrow</option>
+          <option>ThisWeek</option>
+          <option>Sometime</option>
+        </select>
+        <label for="task-priority">Priority:</label>
+        <select id="task-priority">
+          <option>Low</option>
+          <option>Medium</option>
+          <option>High</option>
+        </select>
+        <label for="task-status">Status:</label>
+        <select id="task-status">
+          <option>Todo</option>
+          <option>Blocked</option>
+          <option>Done</option>
+          <option>Hold</option>
+        </select>
+        <button type="submit" class="pure-button pure-button-primary">Add Task</button>
+      </fieldset>
+    </form>
+    <table id="task-table" class="pure-table pure-table-bordered">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Description</th>
+          <th>Tags</th>
+          <th>Due</th>
+          <th>Timestamp</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
