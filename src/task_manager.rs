@@ -24,61 +24,35 @@ impl TaskManager {
         max_id
     }
 
+    fn get_input(prompt: &str) -> String {
+        println!("{}", prompt);
+        let mut input = String::new();
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+        input.trim().to_string()
+    }
+
     pub fn add_task(&mut self, description: &String) {
-        // Ask the user for input in the command line for
-        // each field of the task; make some fields optional
-        // and use default values for them
         let mut task = Task::new();
         task.description = description.to_string();
         task.id = self.get_max_id() + 1;
-
-        println!("Tag: ");
-        io::stdout().flush().unwrap();
-        let mut tags = String::new();
-        io::stdin()
-            .read_line(&mut tags)
-            .expect("Failed to read line");
-        task.tags = tags.trim().split(',').map(|s| s.to_string()).collect();
-
-        // Provide a set of options when the task is due based on the enum
-        // the user will select with a number
-        println!("Due:");
-        println!("1. Today");
-        println!("2. Tomorrow");
-        println!("3. This Week");
-        println!("4. Sometime");
-        let mut due = String::new();
-        std::io::stdin()
-            .read_line(&mut due)
-            .expect("Failed to read line");
-        match due.trim().parse::<u32>() {
-            Ok(1) => task.due = Due::Today,
-            Ok(2) => task.due = Due::Tomorrow,
-            Ok(3) => task.due = Due::ThisWeek,
-            Ok(4) => task.due = Due::Sometime,
-            _ => task.due = Due::Sometime,
+        task.tags = TaskManager::get_input("Tags:")
+            .split(',')
+            .map(|s| s.to_string())
+            .collect();
+        task.due = match TaskManager::get_input("Due:").as_str() {
+            "1" => Due::Today,
+            "2" => Due::Tomorrow,
+            "3" => Due::ThisWeek,
+            _ => Due::Sometime,
         };
-
-        // Provide a set of options for the priority of the task
-        println!("Priority:");
-        println!("1. Low");
-        println!("2. Medium");
-        println!("3. High");
-        let mut priority = String::new();
-        std::io::stdin()
-            .read_line(&mut priority)
-            .expect("Failed to read line");
-        match priority.trim().parse::<u32>() {
-            Ok(1) => task.priority = Priority::Low,
-            Ok(2) => task.priority = Priority::Medium,
-            Ok(3) => task.priority = Priority::High,
-            _ => task.priority = Priority::Low,
+        task.priority = match TaskManager::get_input("Priority:").as_str() {
+            "1" => Priority::Low,
+            "2" => Priority::Medium,
+            _ => Priority::High,
         };
-
-        // Set the task's status to "Todo"
         task.status = Status::Todo;
-
-        // Push the task to the list of tasks
         self.tasks.push(task);
     }
 
@@ -99,6 +73,18 @@ impl TaskManager {
         print!("Description, Status, Due, Tags\n");
         for task in &self.tasks {
             let mut found = true;
+            // If no filters are given, print all tasks
+            if filters == HashMap::new() {
+                println!(
+                    "{}, {}, {}, {}, {}",
+                    task.id,
+                    task.description,
+                    task.status,
+                    task.due,
+                    task.tags.join(", ")
+                );
+                continue;
+            }
             for (key, value) in &filters {
                 match key {
                     &"description" => {

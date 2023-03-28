@@ -35,7 +35,9 @@ fn main() {
             Command::new("ls")
                 .about("List all tasks")
                 .arg(arg!(--tag[TAG]))
-                .arg(arg!(--status[STATUS])),
+                .arg(arg!(--status[STATUS]))
+                .arg(arg!(--due[DUE]))
+                .arg(arg!(--priority[PRIORITY])),
         )
         .get_matches();
 
