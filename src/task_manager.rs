@@ -63,7 +63,8 @@ impl TaskManager {
         {
             "1" => Priority::Low,
             "2" => Priority::Medium,
-            _ => Priority::High,
+            "3" => Priority::High,
+            _ => Priority::Low,
         };
         task.status = Status::Todo;
         self.tasks.push(task);
@@ -115,7 +116,7 @@ impl TaskManager {
                             found = false;
                         }
                     }
-                    &"tags" => {
+                    &"tag" => {
                         if !task.tags.contains(&value.to_string()) {
                             found = false;
                         }
