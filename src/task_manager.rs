@@ -107,12 +107,12 @@ impl TaskManager {
                         }
                     }
                     &"status" => {
-                        if task.status.to_string() != *value {
+                        if task.status.to_string().to_ascii_lowercase() != *value {
                             found = false;
                         }
                     }
                     &"due" => {
-                        if task.due.to_string() != *value {
+                        if task.due.to_string().to_ascii_lowercase() != *value {
                             found = false;
                         }
                     }
