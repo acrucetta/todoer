@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    io::{self, Write},
+    io::{self},
 };
 
 use crate::task::{Due, Priority, Status, Task};
@@ -24,8 +24,11 @@ impl TaskManager {
         max_id
     }
 
-    fn get_input(prompt: &str) -> String {
+    fn get_input(prompt: &str, options: Option<&str>) -> String {
         println!("{}", prompt);
+        if let Some(options) = options {
+            println!("{}", options);
+        }
         let mut input = String::new();
         io::stdin()
             .read_line(&mut input)
@@ -37,17 +40,27 @@ impl TaskManager {
         let mut task = Task::new();
         task.description = description.to_string();
         task.id = self.get_max_id() + 1;
-        task.tags = TaskManager::get_input("Tags:")
+        task.tags = TaskManager::get_input("\nTags", None)
             .split(',')
             .map(|s| s.to_string())
             .collect();
-        task.due = match TaskManager::get_input("Due:").as_str() {
+        task.due = match TaskManager::get_input(
+            "\nDue",
+            Some("1. Today, 2. Tomorrow, 3. This Week, 4.Sometime"),
+        )
+        .as_str()
+        {
             "1" => Due::Today,
             "2" => Due::Tomorrow,
             "3" => Due::ThisWeek,
             _ => Due::Sometime,
         };
-        task.priority = match TaskManager::get_input("Priority:").as_str() {
+        task.priority = match TaskManager::get_input(
+            "\nPriority:",
+            Some("1. Low, 2. Medium, 3. High"),
+        )
+        .as_str()
+        {
             "1" => Priority::Low,
             "2" => Priority::Medium,
             _ => Priority::High,
