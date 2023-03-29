@@ -82,6 +82,26 @@ impl Priority {
             Priority::High => "High".to_string(),
         }
     }
+
+    pub(crate) fn cmp(&self, priority: &Priority) -> std::cmp::Ordering {
+        match self {
+            Priority::Low => match priority {
+                Priority::Low => std::cmp::Ordering::Equal,
+                Priority::Medium => std::cmp::Ordering::Less,
+                Priority::High => std::cmp::Ordering::Less,
+            },
+            Priority::Medium => match priority {
+                Priority::Low => std::cmp::Ordering::Greater,
+                Priority::Medium => std::cmp::Ordering::Equal,
+                Priority::High => std::cmp::Ordering::Less,
+            },
+            Priority::High => match priority {
+                Priority::Low => std::cmp::Ordering::Greater,
+                Priority::Medium => std::cmp::Ordering::Greater,
+                Priority::High => std::cmp::Ordering::Equal,
+            },
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]

@@ -99,7 +99,7 @@ impl TaskManager {
     }
 
     pub fn list_tasks(&self, filters: HashMap<&str, &str>) {
-        print!("Description, Status, Due, Tags\n");
+        let mut found_tasks: Vec<&Task> = vec![];
         for task in &self.tasks {
             let mut found = true;
             // If no filters are given, print all tasks
@@ -152,7 +152,10 @@ impl TaskManager {
                             }
                         } else if value == &"thisweek" {
                             // Due this week is defined as until the end of the weekday (Friday)
-                            if task.due > due_yymmdd || task.due < Local::now().naive_utc().date() - chrono::Duration::days(1){
+                            if task.due > due_yymmdd
+                                || task.due
+                                    < Local::now().naive_utc().date() - chrono::Duration::days(1)
+                            {
                                 found = false;
                             }
                         } else if task.due.to_string() != due_yymmdd.to_string() {
@@ -169,15 +172,51 @@ impl TaskManager {
                 }
             }
             if found {
-                println!(
-                    "{}, {}, {}, {}, {}",
-                    task.id,
-                    task.description,
-                    task.status,
-                    task.due,
-                    task.tags.join(", ")
-                );
+                found_tasks.push(task.clone());
             }
+        }
+        TaskManager::print_tasks(found_tasks);
+    }
+
+    fn print_tasks(tasks: Vec<&Task>) {
+        // We want to print tasks to the command line in the following format:
+        //
+        // Due: YYYY-MM-DD
+        // ---------------
+        // # Tag
+        // [id - Priority] Description
+        // [id - Priority] Description
+        
+        // Due: YYYY-MM-DD
+        // ---------------
+        // etc.
+
+        // First, we need to sort the tasks by due date, tags, and priority
+        let mut sorted_tasks: Vec<&Task> = tasks.clone();
+        sorted_tasks.sort_by(|a, b| a.due.cmp(&b.due));
+        sorted_tasks.sort_by(|a, b| a.tags.cmp(&b.tags));
+        sorted_tasks.sort_by(|a, b| a.priority.cmp(&b.priority));
+
+        // Now we can print the tasks
+        let mut current_due = "".to_string();
+        let mut current_tag = "".to_string();
+
+        for task in sorted_tasks {
+            if task.due.to_string() != current_due {
+                println!("\nDue: {}", task.due);
+                println!("---------------");
+                current_due = task.due.to_string();
+            }
+            if task.tags.len() > 0 && task.tags[0] != current_tag {
+                println!("# {}", task.tags[0]);
+                current_tag = task.tags[0].clone();
+            }
+            println!(
+                "[{} - {}] {}",
+                task.id,
+                task.priority.to_string(),
+                task.description
+            );
         }
     }
 
