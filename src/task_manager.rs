@@ -182,4 +182,8 @@ impl TaskManager {
         }
         Ok(TaskManager { tasks })
     }
+
+    pub(crate) fn get_task(&self, unwrap: u32) -> &Task {
+        self.tasks.iter().find(|task| task.id == unwrap).unwrap()
+    }
 }

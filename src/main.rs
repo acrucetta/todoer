@@ -5,7 +5,7 @@ mod task_manager;
 
 use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
-use std::{env, collections::HashMap};
+use std::{collections::HashMap, env};
 use task::Status;
 use task_manager::TaskManager;
 
@@ -28,6 +28,12 @@ fn main() {
         .subcommand(
             Command::new("rm")
                 .about("Remove a task by its ID")
+                .arg(arg!([ID]))
+                .arg_required_else_help(true),
+        )
+        .subcommand(
+            Command::new("reset")
+                .about("Reset a task by its ID")
                 .arg(arg!([ID]))
                 .arg_required_else_help(true),
         )
@@ -60,6 +66,18 @@ fn main() {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.adjust_status(id.parse::<u32>().unwrap(), Status::Done);
         }
+        Some(("reset", sub_m)) => {
+            let id = sub_m.get_one::<String>("ID").unwrap();
+            // Get the description of the task
+            let description = task_manager
+                .get_task(id.parse::<u32>().unwrap())
+                .description
+                .clone();
+            // Remove the task
+            task_manager.remove_task(id.parse::<u32>().unwrap());
+            // Re-add the task with the same description
+            task_manager.add_task(&description);
+        }
         Some(("rm", sub_m)) => {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.remove_task(id.parse::<u32>().unwrap());
@@ -69,7 +87,7 @@ fn main() {
             let status = sub_m.get_one::<String>("status");
             let due = sub_m.get_one::<String>("due");
             let priority = sub_m.get_one::<String>("priority");
-            
+
             let mut filters = HashMap::new();
             if let Some(tag) = tag {
                 filters.insert("tag", tag.as_str());
