@@ -183,18 +183,25 @@ impl TaskManager {
         // Due: YYYY-MM-DD (Day of Week)
         // ---------------
         // # Tag
-        // [id - Priority] Description
-        // [id - Priority] Description
-        
+        // [x][id - Priority] Description
+        // [ ][id - Priority] Description
+        // [ ][id - Priority] Description
+
         // Due: YYYY-MM-DD
         // ---------------
         // etc.
 
         // First, we need to sort the tasks by due date, tags, and priority
         let mut sorted_tasks: Vec<&Task> = tasks.clone();
-        sorted_tasks.sort_by(|a, b| a.due.cmp(&b.due));
-        sorted_tasks.sort_by(|a, b| a.tags.cmp(&b.tags));
-        sorted_tasks.sort_by(|a, b| a.priority.cmp(&b.priority));
+        sorted_tasks.sort_by(|a, b| {
+            // Sort by due date
+            a.due
+                .cmp(&b.due)
+                // Sort by tag
+                .then_with(|| a.tags[0].cmp(&b.tags[0]))
+                // Sort by priority
+                .then_with(|| a.priority.cmp(&b.priority))
+        });
 
         // Now we can print the tasks
         let mut current_due = "".to_string();
@@ -209,9 +216,16 @@ impl TaskManager {
             if task.tags.len() > 0 && task.tags[0] != current_tag {
                 println!("# {}", task.tags[0]);
                 current_tag = task.tags[0].clone();
-            }
+            };
+            let task_symbol = match task.status {
+                Status::Todo => " ",
+                Status::Done => "x",
+                Status::Blocked => "!",
+                Status::Hold => "~",
+            };
             println!(
-                "[#{} - {}] {}",
+                "[{}][#{} - {}] {}",
+                task_symbol,
                 task.id,
                 task.priority.to_string(),
                 task.description
