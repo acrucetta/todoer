@@ -3,7 +3,6 @@ use std::{
     io::{self},
 };
 
-use chrono::Utc;
 use chrono::Local;
 
 use crate::task::{Priority, Status, Task};
