@@ -2,26 +2,14 @@
 
 A command-line interface (CLI) for managing tasks.
 
+## Data Storage
+The program stores the list of tasks in a CSV file located in the output directory of the program. The file name is tasks.csv.
+
 ## Installation
 
-1. Install Rust programming language
-2. Clone the repository
-
-```css
-git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
-```
-
-3. Change to the repository directory
-
-```css
-cd YOUR_REPOSITORY
-```
-
-4. Build and run the project
-
-```css
-cargo run
-```
+1. Clone the repository: git clone https://github.com/username/task-manager.git
+2. Navigate to the project directory: cd task-manager
+3. Install the required dependencies: cargo build
 
 ## Usage
 
