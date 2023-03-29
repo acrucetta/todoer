@@ -4,6 +4,7 @@ use std::{
 };
 
 use chrono::Utc;
+use chrono::Local;
 
 use crate::task::{Priority, Status, Task};
 
@@ -57,9 +58,9 @@ impl TaskManager {
             // We will use the chrono crate to parse dates and assign them
             // to the task's due field; if it's not a 1,2,3,4, then we will
             // assume it is a date in the format of YYYY-MM-DD
-            "1" => Utc::now().naive_utc().date(),
-            "2" => Utc::now().naive_utc().date() + chrono::Duration::days(1),
-            "3" => Utc::now().naive_utc().date() + chrono::Duration::weeks(1),
+            "1" => Local::now().naive_utc().date(),
+            "2" => Local::now().naive_utc().date() + chrono::Duration::days(1),
+            "3" => Local::now().naive_utc().date() + chrono::Duration::weeks(1),
             _ => match chrono::NaiveDate::parse_from_str(
                 &TaskManager::get_input("\nDue Date (YYYY-MM-DD)", None),
                 "%Y-%m-%d",
