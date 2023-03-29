@@ -31,7 +31,7 @@ The `ls` command can be filtered by one or more of the following options:
 ## Example Output
 
 ```css
-$ task ls --tag work --status todo --due today --priority high
+$ task ls --tag test --status todo --due thisweek 
 
 Due: 2023-03-30 (Thursday)
 --------------------------------
