@@ -152,7 +152,7 @@ impl TaskManager {
                             }
                         } else if value == &"thisweek" {
                             // Due this week is defined as until the end of the weekday (Friday)
-                            if task.due > due_yymmdd {
+                            if task.due > due_yymmdd || task.due < Local::now().naive_utc().date() - chrono::Duration::days(1){
                                 found = false;
                             }
                         } else if task.due.to_string() != due_yymmdd.to_string() {
