@@ -127,7 +127,21 @@ impl TaskManager {
                         }
                     }
                     &"due" => {
-                        if task.due.to_string().to_ascii_lowercase() != *value {
+                        let due_yymmdd = match value {
+                            &"today" => Local::now().naive_utc().date(),
+                            &"tomorrow" => {
+                                Local::now().naive_utc().date() + chrono::Duration::days(1)
+                            }
+                            &"thisweek" => {
+                                Local::now().naive_utc().date() + chrono::Duration::weeks(1)
+                            }
+                            &"sometime" => chrono::NaiveDate::from_ymd_opt(2023, 1, 1).unwrap(),
+                            _ => match chrono::NaiveDate::parse_from_str(value, "%Y-%m-%d") {
+                                Ok(date) => date,
+                                Err(_) => chrono::NaiveDate::from_ymd_opt(2023, 1, 1).unwrap(),
+                            },
+                        };
+                        if task.due.to_string() != due_yymmdd.to_string() {
                             found = false;
                         }
                     }
