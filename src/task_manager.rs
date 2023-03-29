@@ -212,7 +212,7 @@ impl TaskManager {
                 current_tag = task.tags[0].clone();
             }
             println!(
-                "[{} - {}] {}",
+                "[#{} - {}] {}",
                 task.id,
                 task.priority.to_string(),
                 task.description
