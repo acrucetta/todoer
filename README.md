@@ -1,40 +1,45 @@
-# Todoer - do from the CLI
+# Task Manager CLI
 
-## Intro
-The scope of this project will be create a custom CLI tool
-for myself that hadnles todo tasks from the command line.
+A command-line interface (CLI) for managing tasks.
 
-I can add todo tasks, remove them, list them and mark them as done.
+## Installation
 
-## I will be able to add a task with:
-```
-+ Clean kitchen
-Tags: [cleaning, work, research, learning, app, family]
-Due: [today,tomorrow,week,weekend,nextweek]
-Timestamp:
+1. Install Rust programming language
+2. Clone the repository
+
+```css
+git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
 ```
 
-## List tasks with:
-```
-doer ls 
+3. Change to the repository directory
 
-doer ls --p=p1 --tag=work
-doer ls --due=today
+```css
+cd YOUR_REPOSITORY
 ```
 
+4. Build and run the project
 
-## Remove tasks with:
-
-This will list the tasks based on when they're due and their priority level. Tasks will have a priority level of P1 to P3.
-
-I can filter the tasks with ls based on their category, either work, priority, or due date. Each one would have a respective flag.
-
-To mark a task as done, we point to the ID and write "done". This will archive the tasks to a tally of tasks that have been finished.
-
-```
-doer done 2
+```css
+cargo run
 ```
 
+## Usage
 
+The following commands are available:
 
+- `add [TASK]`: Add a new task
+- `do [ID]`: Complete a task by its ID
+- `rm [ID]`: Remove a task by its ID
+- `reset [ID]`: Reset a task by its ID
+- `ls [--tag TAG] [--status STATUS] [--due DUE] [--priority PRIORITY]`: List all tasks
 
+The `ls` command can be filtered by one or more of the following options:
+
+- `--tag TAG`: Filter by tag
+- `--status STATUS`: Filter by status (todo, done, blocked, or hold)
+- `--due DUE`: Filter by due date (YYYY-MM-DD, today, tomorrow, thisweek, sometime, or overdue)
+- `--priority PRIORITY`: Filter by priority (low, medium, or high)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
