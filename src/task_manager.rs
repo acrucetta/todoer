@@ -180,7 +180,7 @@ impl TaskManager {
     fn print_tasks(tasks: Vec<&Task>) {
         // We want to print tasks to the command line in the following format:
         //
-        // Due: YYYY-MM-DD
+        // Due: YYYY-MM-DD (Day of Week)
         // ---------------
         // # Tag
         // [id - Priority] Description
@@ -202,8 +202,8 @@ impl TaskManager {
 
         for task in sorted_tasks {
             if task.due.to_string() != current_due {
-                println!("\nDue: {}", task.due);
-                println!("---------------");
+                println!("\nDue: {} ({})", task.due, task.due.format("%A"));
+                println!("--------------------------------");
                 current_due = task.due.to_string();
             }
             if task.tags.len() > 0 && task.tags[0] != current_tag {
