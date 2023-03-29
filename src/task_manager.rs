@@ -3,7 +3,9 @@ use std::{
     io::{self},
 };
 
-use crate::task::{Due, Priority, Status, Task};
+use chrono::Utc;
+
+use crate::task::{Priority, Status, Task};
 
 pub struct TaskManager {
     pub tasks: Vec<Task>,
@@ -46,14 +48,27 @@ impl TaskManager {
             .collect();
         task.due = match TaskManager::get_input(
             "\nDue",
-            Some("1. Today, 2. Tomorrow, 3. This Week, 4.Sometime"),
+            Some(
+                "1. Today, 2. Tomorrow, 3. This Week, 4.Sometime\nOtherwise, press enter for a custom date YYYY-MM-DD",
+            ),
         )
         .as_str()
         {
-            "1" => Due::Today,
-            "2" => Due::Tomorrow,
-            "3" => Due::ThisWeek,
-            _ => Due::Sometime,
+            // We will use the chrono crate to parse dates and assign them
+            // to the task's due field; if it's not a 1,2,3,4, then we will
+            // assume it is a date in the format of YYYY-MM-DD
+            "1" => Utc::now().naive_utc().date(),
+            "2" => Utc::now().naive_utc().date() + chrono::Duration::days(1),
+            "3" => Utc::now().naive_utc().date() + chrono::Duration::weeks(1),
+            _ => match chrono::NaiveDate::parse_from_str(
+                &TaskManager::get_input("\nDue Date (YYYY-MM-DD)", None),
+                "%Y-%m-%d",
+            ) {
+                Ok(date) => date,
+                Err(_) => {
+                    chrono::NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()
+                }
+            },
         };
         task.priority = match TaskManager::get_input(
             "\nPriority:",
