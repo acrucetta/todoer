@@ -40,6 +40,22 @@ The `ls` command can be filtered by one or more of the following options:
 - `--due DUE`: Filter by due date (YYYY-MM-DD, today, tomorrow, thisweek, sometime, or overdue)
 - `--priority PRIORITY`: Filter by priority (low, medium, or high)
 
+## Example Output
+
+```css
+$ task ls --tag work --status todo --due today --priority high
+
+Due: 2023-03-30 (Thursday)
+--------------------------------
+# test
+[ ][#34 - Low] test
+[ ][#35 - Medium] test task
+
+Due: 2023-04-05 (Wednesday)
+--------------------------------
+[ ][#36 - High] test task 2
+```
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
