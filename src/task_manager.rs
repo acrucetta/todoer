@@ -159,7 +159,6 @@ impl TaskManager {
                                 found = false;
                             }
                         } else if task.due.to_string() != due_yymmdd.to_string() {
-                            print!("Later comparison failed\n");
                             found = false;
                         }
                     }
