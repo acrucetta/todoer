@@ -1,4 +1,4 @@
-# Task Manager CLI
+# Todoer - a task manager CLI in Rust
 
 A command-line interface (CLI) for managing tasks.
 
@@ -7,8 +7,8 @@ The program stores the list of tasks in a CSV file located in the output directo
 
 ## Installation
 
-1. Clone the repository: git clone https://github.com/username/task-manager.git
-2. Navigate to the project directory: cd task-manager
+1. Clone the repository: git clone https://github.com/acrucetta/todoer.git
+2. Navigate to the project directory: cd todoer
 3. Install the required dependencies: cargo build
 
 ## Usage
