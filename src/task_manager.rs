@@ -227,10 +227,33 @@ impl TaskManager {
                 "[{}][#{} - {}] {}",
                 task_symbol,
                 task.id,
-                task.priority.to_string(),
+                match task.priority {
+                    Priority::Low => TaskManager::color_string("Low", "blue"),
+                    Priority::Medium => TaskManager::color_string("Medium", "orange"),
+                    Priority::High => TaskManager::color_string("High", "red"),
+                },
                 task.description
             );
         }
+    }
+
+    fn color_string(string: &str, color: &str) -> String {
+        // For a given string we want to return a string with ANSI color codes
+        // For example, if we pass in "Hello World" and "red", we want to return
+        // "\x1b[31mHello World\x1b[0m"
+        // We will support the basic 8 colors: red, green, yellow, blue, magenta, cyan, and white
+        let color_code = match color {
+            "red" => "31",
+            "green" => "32",
+            "yellow" => "33",
+            "blue" => "34",
+            "magenta" => "35",
+            "cyan" => "36",
+            "white" => "37",
+            "orange" => "38;5;208",
+            _ => "0",
+        };
+        format!("\x1b[{}m{}\x1b[0m", color_code, string)
     }
 
     pub(crate) fn from_file(file_path: &str) -> Result<TaskManager, csv::Error> {
