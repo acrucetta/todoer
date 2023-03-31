@@ -60,7 +60,7 @@ impl TaskManager {
             "1" => Local::now().naive_utc().date(),
             "2" => Local::now().naive_utc().date() + chrono::Duration::days(1),
             "3" => Local::now().naive_utc().date() + chrono::Duration::weeks(1),
-            "4" => Local::now().naive_utc().date() + chrono::Duration::weeks(52),
+            "4" => chrono::NaiveDate::from_ymd_opt(2023, 12, 31).unwrap(),
             _ => match chrono::NaiveDate::parse_from_str(
                 &TaskManager::get_input("\nDue Date (YYYY-MM-DD)", None),
                 "%Y-%m-%d",
