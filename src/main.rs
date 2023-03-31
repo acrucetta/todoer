@@ -25,6 +25,11 @@ fn main() {
                 .arg(arg!([ID]))
                 .arg_required_else_help(true),
         )
+        .subcommand(Command::new("hold").
+            about("Hold a task by its ID")
+            .arg(arg!([ID]))
+            .arg_required_else_help(true)
+        )
         .subcommand(
             Command::new("rm")
                 .about("Remove a task by its ID")
@@ -65,6 +70,10 @@ fn main() {
         Some(("do", sub_m)) => {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.adjust_status(id.parse::<u32>().unwrap(), Status::Done);
+        }
+        Some (("hold", sub_m)) => {
+            let id = sub_m.get_one::<String>("ID").unwrap();
+            task_manager.adjust_status(id.parse::<u32>().unwrap(), Status::Hold);
         }
         Some(("reset", sub_m)) => {
             let id = sub_m.get_one::<String>("ID").unwrap();

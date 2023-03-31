@@ -60,6 +60,7 @@ impl TaskManager {
             "1" => Local::now().naive_utc().date(),
             "2" => Local::now().naive_utc().date() + chrono::Duration::days(1),
             "3" => Local::now().naive_utc().date() + chrono::Duration::weeks(1),
+            "4" => Local::now().naive_utc().date() + chrono::Duration::weeks(52),
             _ => match chrono::NaiveDate::parse_from_str(
                 &TaskManager::get_input("\nDue Date (YYYY-MM-DD)", None),
                 "%Y-%m-%d",
@@ -94,8 +95,15 @@ impl TaskManager {
         // Adjust the status of the task with the given id
         let task = self.tasks.iter_mut().find(|task| task.id == id).unwrap();
 
-        // Set the task's status to the given status
-        task.status = status;
+        // If the task is on Hold and we want to set it to Hold again,
+        // we will set it to Todo instead
+        if task.status == Status::Hold && status == Status::Hold {
+            task.status = Status::Todo;
+        } else if task.status  == Status::Done && status == Status::Done {
+            task.status = Status::Todo;
+        } else {
+            task.status = status;
+        }
     }
 
     pub fn list_tasks(&self, filters: HashMap<&str, &str>) {
