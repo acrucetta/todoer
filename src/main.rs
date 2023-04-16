@@ -25,10 +25,11 @@ fn main() {
                 .arg(arg!([ID]))
                 .arg_required_else_help(true),
         )
-        .subcommand(Command::new("hold").
-            about("Hold a task by its ID")
-            .arg(arg!([ID]))
-            .arg_required_else_help(true)
+        .subcommand(
+            Command::new("hold")
+                .about("Hold a task by its ID")
+                .arg(arg!([ID]))
+                .arg_required_else_help(true),
         )
         .subcommand(
             Command::new("rm")
@@ -48,7 +49,8 @@ fn main() {
                 .arg(arg!(--tag[TAG]))
                 .arg(arg!(--status[STATUS]))
                 .arg(arg!(--due[DUE]))
-                .arg(arg!(--priority[PRIORITY])),
+                .arg(arg!(--priority[PRIORITY]))
+                .arg(arg!(--view[VIEW])),
         )
         .get_matches();
 
@@ -71,7 +73,7 @@ fn main() {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.adjust_status(id.parse::<u32>().unwrap(), Status::Done);
         }
-        Some (("hold", sub_m)) => {
+        Some(("hold", sub_m)) => {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.adjust_status(id.parse::<u32>().unwrap(), Status::Hold);
         }
@@ -96,21 +98,28 @@ fn main() {
             let status = sub_m.get_one::<String>("status");
             let due = sub_m.get_one::<String>("due");
             let priority = sub_m.get_one::<String>("priority");
+            let mut args = HashMap::new();
 
-            let mut filters = HashMap::new();
             if let Some(tag) = tag {
-                filters.insert("tag", tag.as_str());
+                args.insert("tag", tag.as_str());
             }
             if let Some(status) = status {
-                filters.insert("status", status.as_str());
+                args.insert("status", status.as_str());
             }
             if let Some(due) = due {
-                filters.insert("due", due.as_str());
+                args.insert("due", due.as_str());
             }
             if let Some(priority) = priority {
-                filters.insert("priority", priority.as_str());
+                args.insert("priority", priority.as_str());
             }
-            task_manager.list_tasks(filters);
+            if let Some(view) = sub_m.get_one::<String>("view") {
+                match view.as_str() {
+                    "tags" => args.insert("view", "tags"),
+                    "due" => args.insert("view", "due"),
+                    _ => args.insert("view", "tags"), // Default to tags
+                };
+            }
+            task_manager.list_tasks(args);
         }
         _ => unreachable!(),
     }

@@ -99,7 +99,7 @@ impl TaskManager {
         // we will set it to Todo instead
         if task.status == Status::Hold && status == Status::Hold {
             task.status = Status::Todo;
-        } else if task.status  == Status::Done && status == Status::Done {
+        } else if task.status == Status::Done && status == Status::Done {
             task.status = Status::Todo;
         } else {
             task.status = status;
@@ -182,10 +182,76 @@ impl TaskManager {
                 found_tasks.push(task.clone());
             }
         }
-        TaskManager::print_tasks(found_tasks);
+        if found_tasks.len() == 0 {
+            println!("No tasks found");
+        } else {
+            match filters.get("view") {
+                Some(&"tags") => TaskManager::print_by_tag(found_tasks),
+                Some(&"due") => TaskManager::print_by_due(found_tasks),
+                _ => TaskManager::print_by_tag(found_tasks),
+            }
+        }
     }
 
-    fn print_tasks(tasks: Vec<&Task>) {
+    fn print_by_tag(tasks: Vec<&Task>) {
+        // We want to print task to the command line in the following format:
+        //
+        // # Tag
+        // ---------------
+        // [x][id - Priority] Description (MM-DD)
+        // [ ][id - Priority] Description (MM-DD)
+        // [ ][id - Priority] Description (MM-DD)
+        //
+        // # Tag
+        // ---------------
+        // etc.
+        let mut sorted_tasks: Vec<&Task> = tasks.clone();
+        sorted_tasks.sort_by(|a, b| {
+            // Sort by tag
+            a.tags[0]
+                .cmp(&b.tags[0])
+                // Sort by due date
+                .then_with(|| a.due.cmp(&b.due))
+                // Sort by priority
+                .then_with(|| a.priority.cmp(&b.priority))
+        });
+        // Now we can print the tasks
+        let mut current_tag = "".to_string();
+        for task in sorted_tasks {
+            if task.tags[0] != current_tag {
+                current_tag = task.tags[0].clone();
+                println!("\n# {}", current_tag);
+                println!("---------------");
+            }
+            println!(
+                "[{}][{} - {}] {} ({})",
+                TaskManager::get_task_symbol(&task.status),
+                task.id,
+                TaskManager::get_priority_color(&task.priority),
+                task.description,
+                task.due.format("%m-%d")
+            );
+        }
+    }
+
+    fn get_task_symbol(status: &Status) -> String {
+        match status {
+            Status::Todo => " ".to_string(),
+            Status::Hold => "~".to_string(),
+            Status::Done => "X".to_string(),
+            Status::Blocked => "!".to_string(),
+        }
+    }
+
+    fn get_priority_color(priority: &Priority) -> String {
+        match priority {
+            Priority::Low => TaskManager::color_string("Low", "blue"),
+            Priority::Medium => TaskManager::color_string("Medium", "orange"),
+            Priority::High => TaskManager::color_string("High", "red"),
+        }
+    }
+
+    fn print_by_due(tasks: Vec<&Task>) {
         // We want to print tasks to the command line in the following format:
         //
         // Due: YYYY-MM-DD (Day of Week)
@@ -225,21 +291,11 @@ impl TaskManager {
                 println!("# {}", task.tags[0]);
                 current_tag = task.tags[0].clone();
             };
-            let task_symbol = match task.status {
-                Status::Todo => " ",
-                Status::Done => "x",
-                Status::Blocked => "!",
-                Status::Hold => "~",
-            };
             println!(
                 "[{}][#{} - {}] {}",
-                task_symbol,
+                TaskManager::get_task_symbol(&task.status),
                 task.id,
-                match task.priority {
-                    Priority::Low => TaskManager::color_string("Low", "blue"),
-                    Priority::Medium => TaskManager::color_string("Medium", "orange"),
-                    Priority::High => TaskManager::color_string("High", "red"),
-                },
+                TaskManager::get_priority_color(&task.priority),
                 task.description
             );
         }
