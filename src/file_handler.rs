@@ -1,12 +1,11 @@
 use std::env;
 
 use crate::task_manager::TaskManager;
+use dotenv::dotenv;
 
 pub fn get_output_dir() -> String {
     // Get .env from the path of the github repository
-    // TODO: Change this later.
-    const DOTENV_PATH: &str = "/Users/andrescrucettanieto/Library/CloudStorage/OneDrive-WaltzHealth/Documents/Code/todoer/.env";
-    dotenv::from_path(DOTENV_PATH).ok();
+    dotenv().ok();
     match env::var("DOER_OUTPUT_DIR") {
         Ok(val) => return val,
         Err(_) => println!("DOER_OUTPUT_DIR not set, using current directory"),
@@ -36,7 +35,12 @@ pub fn save_tasks(file_path: &str, task_manager: TaskManager) -> Result<(), csv:
             &task.description,
             &task.tags.join(","),
             &task.due.to_string(),
-            &task.timestamp.duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_secs().to_string(),
+            &task
+                .timestamp
+                .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+                .to_string(),
             &task.priority.to_string(),
             &task.status.to_string(),
         ])?;
