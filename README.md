@@ -12,30 +12,30 @@ To install this application, follow these steps:
 
 `DOER_OUTPUT_DIR=/path/to/task/file`
 
-4. Run the application using the command `./target/release/task-cli <SUBCOMMAND> [ARGS]`.
+4. Run the application using the command `./target/release/task <SUBCOMMAND> [ARGS]`.
 
 ## Usage
 
 The application supports the following subcommands:
 
-- `add`: Add a new task. Example: `task-cli add "Buy groceries"`
-- `do`: Mark a task as done. Example: `task-cli do 1`
-- `hold`: Put a task on hold. Example: `task-cli hold 1`
-- `reset`: Reset a task. Example: `task-cli reset 1`
-- `rm`: Remove a task. Example: `task-cli rm 1`
-- `ls`: List all tasks with filtering options. Example: `task-cli ls --tag personal --status todo`
+- `add`: Add a new task. Example: `task add "Buy groceries"`
+- `do`: Mark a task as done. Example: `task do 1`
+- `hold`: Put a task on hold. Example: `task hold 1`
+- `reset`: Reset a task. Example: `task reset 1`
+- `rm`: Remove a task. Example: `task rm 1`
+- `ls`: List all tasks with filtering options. Example: `task ls --tag personal --status todo`
 
 The filtering options for the `ls` subcommand are:
 
-- `--tag`: Filter tasks by tag. Example: `task-cli ls --tag personal`
-- `--status`: Filter tasks by status. Example: `task-cli ls --status done`
-- `--due`: Filter tasks by due date. Example: `task-cli ls --due 2022-01-01`
-- `--priority`: Filter tasks by priority. Example: `task-cli ls --priority 1`
+- `--tag`: Filter tasks by tag. Example: `task ls --tag personal`
+- `--status`: Filter tasks by status. Example: `task ls --status done`
+- `--due`: Filter tasks by due date. Example: `task ls --due 2022-01-01`
+- `--priority`: Filter tasks by priority. Example: `task ls --priority 1`
 
 The `--view` option for the `ls` subcommand determines how the tasks are displayed. The available options are:
 
-- `tags`: Display the tags for each task. Example: `task-cli ls --view tags`
-- `due`: Display the due date for each task. Example: `task-cli ls --view due`
+- `tags`: Display the tags for each task. Example: `task ls --view tags`
+- `due`: Display the due date for each task. Example: `task ls --view due`
 
 ## Example
 
