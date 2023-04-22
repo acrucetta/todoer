@@ -1,11 +1,9 @@
 use std::env;
 
 use crate::task_manager::TaskManager;
-use dotenv::dotenv;
 
 pub fn get_output_dir() -> String {
-    // Get .env from the path of the github repository
-    dotenv().ok();
+    dotenv::from_path("../.env").ok();
     match env::var("DOER_OUTPUT_DIR") {
         Ok(val) => return val,
         Err(_) => println!("DOER_OUTPUT_DIR not set, using current directory"),

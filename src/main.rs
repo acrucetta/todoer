@@ -5,10 +5,10 @@ mod task_manager;
 
 use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
-use std::env;
+use serde_json::{from_reader, from_slice};
+use std::{env, io::Cursor};
 use task::Status;
 use task_manager::{TaskManager, ViewFilters};
-
 fn main() {
     let matches = command!()
         .subcommand_required(true)
@@ -52,6 +52,8 @@ fn main() {
                 .arg(arg!(--view[VIEW])),
         )
         .get_matches();
+
+    // We're loading the .env as a binary, so we need to get the path of the binary
 
     let file_path = format!("{}/tasks.csv", get_output_dir());
 

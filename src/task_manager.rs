@@ -198,14 +198,11 @@ impl TaskManager {
                 found_tasks.push(task);
             }
         }
-        if found_tasks.is_empty() {
-            println!("No tasks found");
-        } else {
-            match filters.view.as_deref() {
-                Some("tag") => TaskManager::print_by_tag(found_tasks),
-                Some("due") => TaskManager::print_by_due(found_tasks),
-                _ => TaskManager::print_by_tag(found_tasks),
-            }
+
+        match filters.view.as_deref() {
+            Some("tag") => TaskManager::print_by_tag(found_tasks),
+            Some("due") => TaskManager::print_by_due(found_tasks),
+            _ => TaskManager::print_by_tag(found_tasks),
         }
     }
 
