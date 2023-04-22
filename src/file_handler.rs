@@ -1,9 +1,10 @@
-use std::env;
+use std::{env, path::Path};
 
-use crate::task_manager::TaskManager;
+use crate::{task_manager::TaskManager, ENV_VARS};
 
 pub fn get_output_dir() -> String {
-    dotenv::from_path("../.env").ok();
+    const DOTENV_PATH: &str = "/Users/andrescrucettanieto/Library/CloudStorage/OneDrive-WaltzHealth/Documents/Code/todoer/.env";
+    dotenv::from_path(DOTENV_PATH).ok();
     match env::var("DOER_OUTPUT_DIR") {
         Ok(val) => return val,
         Err(_) => println!("DOER_OUTPUT_DIR not set, using current directory"),
