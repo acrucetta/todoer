@@ -1,8 +1,6 @@
-use std::{
-    io::{self},
-};
+use std::io::{self};
 
-use chrono::{Local};
+use chrono::Local;
 
 use crate::task::{Priority, Status, Task};
 
@@ -150,17 +148,15 @@ impl TaskManager {
                 continue;
             }
             if let Some(tags) = &filters.tag {
-                for tag in tags {
-                    if !task.tags.contains(&tag.to_string()) {
-                        found = false;
-                    }
+                // Check if the task has any of the tags
+                if !tags.iter().any(|tag| task.tags.contains(tag)) {
+                    found = false;
                 }
             }
             if let Some(status) = &filters.status {
-                for stat in status {
-                    if task.status.to_string() != *stat {
-                        found = false;
-                    }
+                // Check if the status is in the list of statuses
+                if !status.contains(&task.status.to_string()) {
+                    found = false;
                 }
             }
             if let Some(due) = &filters.due {
@@ -194,10 +190,8 @@ impl TaskManager {
                 }
             }
             if let Some(priority) = &filters.priority {
-                for p in priority {
-                    if task.priority.to_string() != *p {
-                        found = false;
-                    }
+                if !priority.contains(&task.priority.to_string()) {
+                    found = false;
                 }
             }
             if let Some(description) = &filters.description {
