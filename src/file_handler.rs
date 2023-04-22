@@ -1,6 +1,6 @@
 use std::{env, path::Path};
 
-use crate::{task_manager::TaskManager, ENV_VARS};
+use crate::task_manager::TaskManager;
 
 pub fn get_output_dir() -> String {
     const DOTENV_PATH: &str = "/Users/andrescrucettanieto/Library/CloudStorage/OneDrive-WaltzHealth/Documents/Code/todoer/.env";

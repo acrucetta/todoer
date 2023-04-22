@@ -6,7 +6,7 @@ mod task_manager;
 use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
 
-use std::{env};
+use std::env;
 use task::Status;
 use task_manager::{TaskManager, ViewFilters};
 fn main() {
