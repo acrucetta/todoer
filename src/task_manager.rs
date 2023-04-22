@@ -18,11 +18,6 @@ pub struct ViewFilters {
     pub description: Option<String>,
 }
 
-pub enum View {
-    ByTags,
-    ByDue,
-}
-
 impl ViewFilters {
     pub fn new() -> ViewFilters {
         ViewFilters {
