@@ -5,8 +5,8 @@ mod task_manager;
 
 use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
-use serde_json::{from_reader, from_slice};
-use std::{env, io::Cursor};
+
+use std::{env};
 use task::Status;
 use task_manager::{TaskManager, ViewFilters};
 fn main() {
