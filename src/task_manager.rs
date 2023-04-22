@@ -11,6 +11,34 @@ pub struct TaskManager {
     pub tasks: Vec<Task>,
 }
 
+#[derive(Debug, PartialEq)]
+pub struct ViewFilters {
+    pub tag: Option<Vec<String>>,
+    pub status: Option<Vec<String>>,
+    pub due: Option<String>,
+    pub priority: Option<Vec<String>>,
+    pub view: Option<String>,
+    pub description: Option<String>,
+}
+
+pub enum View {
+    ByTags,
+    ByDue,
+}
+
+impl ViewFilters {
+    pub fn new() -> ViewFilters {
+        ViewFilters {
+            tag: None,
+            status: None,
+            due: None,
+            priority: None,
+            view: None,
+            description: None,
+        }
+    }
+}
+
 impl TaskManager {
     pub fn new() -> TaskManager {
         TaskManager { tasks: Vec::new() }
@@ -106,12 +134,12 @@ impl TaskManager {
         }
     }
 
-    pub fn list_tasks(&self, filters: HashMap<&str, &str>) {
+    pub fn list_tasks(&self, filters: ViewFilters) {
         let mut found_tasks: Vec<&Task> = vec![];
         for task in &self.tasks {
             let mut found = true;
             // If no filters are given, print all tasks
-            if filters == HashMap::new() {
+            if filters == ViewFilters::new() {
                 println!(
                     "{}, {}, {}, {}, {}",
                     task.id,
@@ -122,72 +150,72 @@ impl TaskManager {
                 );
                 continue;
             }
-            for (key, value) in &filters {
-                match key {
-                    &"description" => {
-                        if !task.description.contains(value) {
-                            found = false;
+            if let Some(tags) = &filters.tag {
+                for tag in tags {
+                    if !task.tags.contains(&tag.to_string()) {
+                        found = false;
+                    }
+                }
+            }
+            if let Some(status) = &filters.status {
+                for stat in status {
+                    if task.status.to_string() != *stat {
+                        found = false;
+                    }
+                }
+            }
+            if let Some(due) = &filters.due {
+                let due_yymmdd = match due.as_str() {
+                    "today" => Local::now().naive_utc().date(),
+                    "tomorrow" => Local::now().naive_utc().date() + chrono::Duration::days(1),
+                    "thisweek" => {
+                        // Due this week is defined as until the end of the weekday (Friday)
+                        // We want to take whatever weekday next Friday is
+                        Local::now().naive_utc().date() + chrono::Duration::weeks(1)
+                    }
+                    "sometime" => {
+                        // Sometime is defined as the end of the year
+                        chrono::NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()
+                    }
+                    _ => {
+                        // If we get here, we have a custom date
+                        // We will parse it and use it
+                        match chrono::NaiveDate::parse_from_str(due, "%Y-%m-%d") {
+                            Ok(date) => date,
+                            Err(_) => {
+                                // If we get here, we have an invalid date
+                                // We will set it to sometime
+                                chrono::NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()
+                            }
                         }
                     }
-                    &"status" => {
-                        if task.status.to_string().to_ascii_lowercase() != *value {
-                            found = false;
-                        }
+                };
+                if task.due != due_yymmdd {
+                    found = false;
+                }
+            }
+            if let Some(priority) = &filters.priority {
+                for p in priority {
+                    if task.priority.to_string() != *p {
+                        found = false;
                     }
-                    &"due" => {
-                        let due_yymmdd = match value {
-                            &"today" => Local::now().naive_utc().date(),
-                            &"tomorrow" => {
-                                Local::now().naive_utc().date() + chrono::Duration::days(1)
-                            }
-                            &"thisweek" => {
-                                // Due this week is defined as until the end of the weekday (Friday)
-                                // We want to take whatever weekday next Friday is
-                                Local::now().naive_utc().date()
-                                    + chrono::Duration::days(
-                                        5 - Local::now().weekday().num_days_from_monday() as i64,
-                                    )
-                            }
-                            &"sometime" => chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-                            _ => match chrono::NaiveDate::parse_from_str(value, "%Y-%m-%d") {
-                                Ok(date) => date,
-                                Err(_) => chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-                            },
-                        };
-                        if value == &"overdue" {
-                            if task.due > Local::now().naive_utc().date() {
-                                found = false;
-                            }
-                        } else if value == &"thisweek" {
-                            // Due this week is defined as until the end of the weekday (Friday)
-                            if task.due > due_yymmdd
-                                || task.due
-                                    < Local::now().naive_utc().date() - chrono::Duration::days(1)
-                            {
-                                found = false;
-                            }
-                        } else if task.due.to_string() != due_yymmdd.to_string() {
-                            found = false;
-                        }
-                    }
-                    &"tag" => {
-                        if !task.tags.contains(&value.to_string()) {
-                            found = false;
-                        }
-                    }
-                    _ => {}
+                }
+            }
+            if let Some(description) = &filters.description {
+                if !task.description.contains(description) {
+                    found = false;
                 }
             }
             if found {
-                found_tasks.push(task.clone());
+                found_tasks.push(task);
             }
         }
         if found_tasks.len() == 0 {
             println!("No tasks found");
         } else {
-            match filters.get("view") {
-                Some(&"tags") => TaskManager::print_by_tag(found_tasks),
-                Some(&"due") => TaskManager::print_by_due(found_tasks),
+            match filters.view.as_deref() {
+                Some("tag") => TaskManager::print_by_tag(found_tasks),
+                Some("due") => TaskManager::print_by_due(found_tasks),
                 _ => TaskManager::print_by_tag(found_tasks),
             }
         }

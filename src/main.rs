@@ -7,12 +7,11 @@ use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
 use std::{collections::HashMap, env};
 use task::Status;
-use task_manager::TaskManager;
+use task_manager::{TaskManager, ViewFilters};
 
 fn main() {
     let matches = command!()
         .subcommand_required(true)
-        .arg_required_else_help(true)
         .subcommand(
             Command::new("add")
                 .about("Add a new task")
@@ -98,30 +97,36 @@ fn main() {
             let status = sub_m.get_one::<String>("status");
             let due = sub_m.get_one::<String>("due");
             let priority = sub_m.get_one::<String>("priority");
-            let mut args = HashMap::new();
+
+            let mut view_args = ViewFilters::new();
 
             if let Some(tag) = tag {
-                args.insert("tag", tag.as_str());
+                let tags = tag.split(',').map(|t| t.trim().to_owned()).collect();
+                view_args.tag = Some(tags);
             }
             if let Some(status) = status {
-                args.insert("status", status.as_str());
+                let statuses = status.split(',').map(|t| t.trim().to_owned()).collect();
+                view_args.status = Some(statuses);
             }
             if let Some(due) = due {
-                args.insert("due", due.as_str());
+                view_args.due = Some(due.to_owned());
             }
             if let Some(priority) = priority {
-                args.insert("priority", priority.as_str());
+                let priorities: Vec<String> =
+                    priority.split(',').map(|t| t.trim().to_owned()).collect();
+                view_args.priority = Some(priorities);
             }
             if let Some(view) = sub_m.get_one::<String>("view") {
                 match view.as_str() {
-                    "tags" => args.insert("view", "tags"),
-                    "due" => args.insert("view", "due"),
-                    _ => args.insert("view", "tags"), // Default to tags
+                    "tags" => view_args.view = Some(String::from("tags")),
+                    "due" => view_args.view = Some(String::from("due")),
+                    _ => eprintln!("Invalid view type"),
                 };
             }
-            task_manager.list_tasks(args);
+            task_manager.list_tasks(view_args);
         }
-        _ => unreachable!(),
+        Some(_) => unreachable!(),
+        None => unreachable!(),
     }
 
     match save_tasks(&file_path, task_manager) {

@@ -1,3 +1,3 @@
 id,description,tags,due,timestamp,priority,status
-1,Clean kitchen,,Sometime,1679847963,Low,Todo
-2,Clean kitchen,1,Tomorrow,1679848038,High,Todo
+1,Clean kitchen,,2023-01-01,1679847963,Low,Todo
+2,Clean kitchen,1,2023-01-01,1679848038,High,Todo
