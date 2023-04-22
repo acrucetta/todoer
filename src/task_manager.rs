@@ -1,9 +1,8 @@
 use std::{
-    collections::HashMap,
     io::{self},
 };
 
-use chrono::{Datelike, Local};
+use chrono::{Local};
 
 use crate::task::{Priority, Status, Task};
 
@@ -210,7 +209,7 @@ impl TaskManager {
                 found_tasks.push(task);
             }
         }
-        if found_tasks.len() == 0 {
+        if found_tasks.is_empty() {
             println!("No tasks found");
         } else {
             match filters.view.as_deref() {
@@ -315,7 +314,7 @@ impl TaskManager {
                 println!("--------------------------------");
                 current_due = task.due.to_string();
             }
-            if task.tags.len() > 0 && task.tags[0] != current_tag {
+            if !task.tags.is_empty() && task.tags[0] != current_tag {
                 println!("# {}", task.tags[0]);
                 current_tag = task.tags[0].clone();
             };
@@ -370,7 +369,7 @@ impl TaskManager {
             if record.get(0).unwrap() == "id" {
                 continue;
             }
-            if record.len() == 0 {
+            if record.is_empty() {
                 continue;
             }
             let task = Task::from_record(record);

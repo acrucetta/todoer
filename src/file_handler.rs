@@ -11,7 +11,7 @@ pub fn get_output_dir() -> String {
         Err(_) => println!("DOER_OUTPUT_DIR not set, using current directory"),
     }
     let curr_dir = ".";
-    return curr_dir.to_string();
+    curr_dir.to_string()
 }
 
 pub fn save_tasks(file_path: &str, task_manager: TaskManager) -> Result<(), csv::Error> {
@@ -19,7 +19,7 @@ pub fn save_tasks(file_path: &str, task_manager: TaskManager) -> Result<(), csv:
         .has_headers(false)
         .from_path(file_path)?;
 
-    writer.write_record(&[
+    writer.write_record([
         "id",
         "description",
         "tags",
@@ -30,7 +30,7 @@ pub fn save_tasks(file_path: &str, task_manager: TaskManager) -> Result<(), csv:
     ])?;
 
     for task in task_manager.tasks {
-        writer.write_record(&[
+        writer.write_record([
             &task.id.to_string(),
             &task.description,
             &task.tags.join(","),

@@ -5,7 +5,7 @@ mod task_manager;
 
 use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
-use std::{collections::HashMap, env};
+use std::env;
 use task::Status;
 use task_manager::{TaskManager, ViewFilters};
 
@@ -66,7 +66,7 @@ fn main() {
     match matches.subcommand() {
         Some(("add", sub_m)) => {
             let task = sub_m.get_one::<String>("TASK").unwrap();
-            task_manager.add_task(&task);
+            task_manager.add_task(task);
         }
         Some(("do", sub_m)) => {
             let id = sub_m.get_one::<String>("ID").unwrap();
@@ -130,7 +130,7 @@ fn main() {
     }
 
     match save_tasks(&file_path, task_manager) {
-        Ok(_) => println!(""),
+        Ok(_) => println!(),
         Err(e) => eprintln!("Error saving tasks: {}", e),
     }
 }
