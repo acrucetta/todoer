@@ -75,14 +75,6 @@ impl fmt::Display for Priority {
 }
 
 impl Priority {
-    pub fn to_string(&self) -> String {
-        match self {
-            Priority::Low => "Low".to_string(),
-            Priority::Medium => "Medium".to_string(),
-            Priority::High => "High".to_string(),
-        }
-    }
-
     pub(crate) fn cmp(&self, priority: &Priority) -> std::cmp::Ordering {
         match self {
             Priority::Low => match priority {
@@ -119,17 +111,6 @@ impl fmt::Display for Status {
             Status::Done => write!(f, "Done"),
             Status::Hold => write!(f, "Hold"),
             Status::Blocked => write!(f, "Blocked"),
-        }
-    }
-}
-
-impl Status {
-    pub fn to_string(&self) -> String {
-        match self {
-            Status::Todo => "Todo".to_string(),
-            Status::Done => "Done".to_string(),
-            Status::Hold => "Hold".to_string(),
-            Status::Blocked => "Blocked".to_string(),
         }
     }
 }

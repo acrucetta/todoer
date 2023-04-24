@@ -117,9 +117,9 @@ impl TaskManager {
 
         // If the task is on Hold and we want to set it to Hold again,
         // we will set it to Todo instead
-        if task.status == Status::Hold && status == Status::Hold {
-            task.status = Status::Todo;
-        } else if task.status == Status::Done && status == Status::Done {
+        if (task.status == Status::Hold && status == Status::Hold)
+            || (task.status == Status::Done && status == Status::Done)
+        {
             task.status = Status::Todo;
         } else {
             task.status = status;

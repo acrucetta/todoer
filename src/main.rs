@@ -1,15 +1,21 @@
 // src/main.rs
 mod file_handler;
+mod helpers;
+mod notion;
+mod notion_api;
 mod task;
 mod task_manager;
 
 use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
+use notion::NotionManager;
 
 use std::env;
 use task::Status;
 use task_manager::{TaskManager, ViewFilters};
-fn main() {
+
+#[tokio::main]
+async fn main() {
     let matches = command!()
         .subcommand_required(true)
         .subcommand(
@@ -51,6 +57,12 @@ fn main() {
                 .arg(arg!(--priority[PRIORITY]))
                 .arg(arg!(--view[VIEW])),
         )
+        .subcommand(
+            Command::new("nadd")
+                .about("Add a task to the set notion db")
+                .arg(arg!([TASK]))
+                .arg_required_else_help(true),
+        )
         .get_matches();
 
     // We're loading the .env as a binary, so we need to get the path of the binary
@@ -64,6 +76,8 @@ fn main() {
             TaskManager::new()
         }
     };
+
+    let mut notion_manager = NotionManager::new();
 
     match matches.subcommand() {
         Some(("add", sub_m)) => {
@@ -126,6 +140,17 @@ fn main() {
                 };
             }
             task_manager.list_tasks(view_args);
+        }
+        Some(("nadd", sub_m)) => {
+            let task = match sub_m.try_get_one::<String>("TASK") {
+                Ok(Some(task)) => task,
+                _ => {
+                    helpers::handle_error("Missing or invalid task argument");
+                    return;
+                }
+            };
+
+            notion_manager.add_task(task).await;
         }
         Some(_) => unreachable!(),
         None => unreachable!(),
