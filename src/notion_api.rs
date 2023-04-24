@@ -37,7 +37,7 @@ impl NotionApi {
         let body_string = body.to_string();
 
         let client = Client::new();
-        let res = client
+        client
             .post("https://api.notion.com/v1/pages")
             .header(AUTHORIZATION, bearer_token)
             .header(CONTENT_TYPE, "application/json")
@@ -46,7 +46,6 @@ impl NotionApi {
             .send()
             .await?;
 
-        println!("{:?}", res);
         Ok(())
     }
 
