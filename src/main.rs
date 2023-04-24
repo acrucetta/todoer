@@ -63,10 +63,14 @@ async fn main() {
                 .arg(arg!([TASK]))
                 .arg_required_else_help(true),
         )
+        .subcommand(
+            Command::new("nls")
+                .about("List all task in the set notion db")
+                .arg_required_else_help(false),
+        )
         .get_matches();
 
     // We're loading the .env as a binary, so we need to get the path of the binary
-
     let file_path = format!("{}/tasks.csv", get_output_dir());
 
     let mut task_manager = match TaskManager::from_file(&file_path) {
@@ -149,8 +153,10 @@ async fn main() {
                     return;
                 }
             };
-
             notion_manager.add_task(task).await;
+        }
+        Some(("nls", _)) => {
+            notion_manager.list_all_tasks().await;
         }
         Some(_) => unreachable!(),
         None => unreachable!(),

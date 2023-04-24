@@ -24,4 +24,13 @@ pub enum AppError {
 
     #[error("{0}")]
     JsonError(String, #[source] serde_json::Error),
+
+    #[error("Invalid argument: {0}")]
+    InvalidArgument(String),
+
+    #[error("Unknown error: {0}")]
+    UnknownError(String),
+
+    #[error("{0}")]
+    ReqwestError(String, #[source] reqwest::Error),
 }

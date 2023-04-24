@@ -24,39 +24,9 @@ impl NotionManager {
     }
 
     pub async fn add_task(&mut self, task: &str) {
-        let mut config_path = match config_dir() {
-            Some(path) => path,
-            None => {
-                helpers::handle_error("Failed to find the config directory");
-                return;
-            }
-        };
-
-        config_path.push("todoer");
-        config_path.push("config");
-
-        let (notion_api_key, database_key) = if config_path.exists() {
-            match read_and_parse_config(&config_path) {
-                Ok(keys) => keys,
-                Err(e) => {
-                    helpers::handle_error(&e.to_string());
-                    match prompt_and_store_notion_keys() {
-                        Ok(keys) => keys,
-                        Err(e) => {
-                            helpers::handle_error(&e.to_string());
-                            return;
-                        }
-                    }
-                }
-            }
-        } else {
-            match prompt_and_store_notion_keys() {
-                Ok(keys) => keys,
-                Err(e) => {
-                    helpers::handle_error(&e.to_string());
-                    return;
-                }
-            }
+        let (notion_api_key, database_key) = match get_notion_keys() {
+            Some(value) => value,
+            None => return,
         };
 
         let notion_api = notion_api::NotionApi::new(&notion_api_key, &database_key);
@@ -65,9 +35,58 @@ impl NotionManager {
             Err(e) => helpers::handle_error(&e.to_string()),
         }
     }
+
+    pub async fn list_all_tasks(&self) {
+        let (notion_api_key, database_key) = match get_notion_keys() {
+            Some(value) => value,
+            None => return,
+        };
+
+        let notion_api = notion_api::NotionApi::new(&notion_api_key, &database_key);
+        match notion_api.read_database_pages().await {
+            Ok(()) => println!("Read executed successfully"),
+            Err(e) => helpers::handle_error(&e.to_string()),
+        }
+    }
 }
 
-pub fn prompt_and_store_notion_keys() -> Result<(String, String), AppError> {
+fn get_notion_keys() -> Option<(String, String)> {
+    let mut config_path = match config_dir() {
+        Some(path) => path,
+        None => {
+            helpers::handle_error("Failed to find the config directory");
+            return None;
+        }
+    };
+    config_path.push("todoer");
+    config_path.push("config");
+    let (notion_api_key, database_key) = if config_path.exists() {
+        match read_and_parse_config(&config_path) {
+            Ok(keys) => keys,
+            Err(e) => {
+                helpers::handle_error(&e.to_string());
+                match prompt_and_store_notion_keys() {
+                    Ok(keys) => keys,
+                    Err(e) => {
+                        helpers::handle_error(&e.to_string());
+                        return None;
+                    }
+                }
+            }
+        }
+    } else {
+        match prompt_and_store_notion_keys() {
+            Ok(keys) => keys,
+            Err(e) => {
+                helpers::handle_error(&e.to_string());
+                return None;
+            }
+        }
+    };
+    Some((notion_api_key, database_key))
+}
+
+fn prompt_and_store_notion_keys() -> Result<(String, String), AppError> {
     let api_key: String = Input::new()
         .with_prompt("Enter your Notion API key")
         .interact_text()
