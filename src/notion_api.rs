@@ -95,11 +95,95 @@ impl NotionApi {
 
                 let results = json
                     .as_object()
-                    .and_then(|o| dbg!(o.get("results")))
+                    .and_then(|o| (o.get("results")))
                     .ok_or_else(|| AppError::MapError("Key 'results' not found in map".to_string()))
                     .and_then(|v| {
-                        v.as_array()
-                            .ok_or_else(|| AppError::MapError("'results' is not a map".to_string()))
+                        v.as_array().ok_or_else(|| {
+                            AppError::MapError("'results' is not an array".to_string())
+                        })
+                    });
+
+                let properties = results.and_then(|vec| {
+                    vec.first()
+                        .ok_or_else(|| AppError::VecError("'results' is empty".to_string()))
+                        .and_then(|value| {
+                            value.get("properties").ok_or_else(|| {
+                                AppError::VecError("'properties' not found".to_string())
+                            })
+                        })
+                });
+
+                match properties {
+                    Ok(properties) => {
+                        if let Some(props) = properties.as_object() {
+                            for entry in props.iter() {
+                                println!("{}", entry.0)
+                            }
+                        }
+                        // for entry in props.iter() {
+                        //     println!(entry.0)
+                        // }
+                        Ok(())
+                    }
+                    Err(e) => Err(e),
+                }
+
+                // Ok(())
+            }
+            StatusCode::BAD_REQUEST => {
+                let error_message = res
+                    .text()
+                    .await
+                    .map_err(|e| AppError::ReqwestError(e.to_string(), e))?;
+                Err(AppError::InvalidArgument(error_message))
+            }
+            _ => Err(AppError::UnknownError(format!(
+                "Notion API returned an unexpected response status: {}",
+                res.status()
+            ))),
+        }
+    }
+
+    pub async fn read_database_properties(&self) -> Result<(), AppError> {
+        //         curl 'https://api.notion.com/v1/databases/668d797c-76fa-4934-9b05-ad288df2d136' \
+        //              -H 'Authorization: Bearer '"$NOTION_API_KEY"'' \
+        //              -H 'Notion-Version: 2022-06-28'
+
+        let bearer_token = format!("Bearer {}", &self.api_key);
+        let post_url = format!("https://api.notion.com/v1/databases/{}", &self.database_id);
+
+        let client = Client::new();
+        let res = client
+            .get(post_url)
+            .header(AUTHORIZATION, bearer_token)
+            .header("Notion-Version", "2022-06-28")
+            .header(CONTENT_TYPE, "application/json")
+            .body(json!({}).to_string())
+            .send()
+            .await
+            .map_err(|e| AppError::ReqwestError(e.to_string(), e))?;
+
+        match res.status() {
+            StatusCode::OK => {
+                let body = res
+                    .text()
+                    .await
+                    .map_err(|e| AppError::ReqwestError(e.to_string(), e))?;
+
+                let json: Value =
+                    dbg!(serde_json::from_str(&body)
+                        .map_err(|e| AppError::JsonError(e.to_string(), e)))?;
+
+                let results = json
+                    .as_object()
+                    .and_then(|o| o.get("properties"))
+                    .ok_or_else(|| {
+                        AppError::MapError("Key 'properties' not found in map".to_string())
+                    })
+                    .and_then(|v| {
+                        v.as_array().ok_or_else(|| {
+                            AppError::MapError("'properties' is not an array".to_string())
+                        })
                     });
 
                 match results {
@@ -125,6 +209,4 @@ impl NotionApi {
             ))),
         }
     }
-
-    // Implement other API methods here, using self.database_id as needed
 }
