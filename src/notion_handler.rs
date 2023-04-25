@@ -52,23 +52,54 @@ impl NotionManager {
 
         for page in pages {
             if let Some(page_properties) = page.as_object() {
+                // props and order are not guaranteed, so we loop and stuff each one then print
+                let mut title: (&str, Option<notion_props::Title>) = ("", None);
+                let mut checkbox: (&str, Option<notion_props::Checkbox>) = ("", None);
+                let mut date: (&str, Option<notion_props::Date>) = ("", None);
+                let mut relation: (&str, Option<notion_props::Relation>) = ("", None);
+
                 for prop in page_properties {
-                    if let Ok(title) = from_value::<notion_props::Title>(prop.1.clone()) {
-                        print!("{}: ", prop.0);
-                        for text in title.title {
-                            print!("{}", text.plain_text)
-                        }
-                        println!()
+                    if title.1.is_none() {
+                        title = (
+                            prop.0,
+                            from_value::<notion_props::Title>(prop.1.clone()).ok(),
+                        );
                     }
-                    if let Ok(checkbox) = from_value::<notion_props::Checkbox>(prop.1.clone()) {
-                        println!("{}: {}", prop.0, checkbox.checkbox);
+                    if checkbox.1.is_none() {
+                        checkbox = (
+                            prop.0,
+                            from_value::<notion_props::Checkbox>(prop.1.clone()).ok(),
+                        );
                     }
-                    if let Ok(date) = from_value::<notion_props::Date>(prop.1.clone()) {
-                        println!("{}: {}", prop.0, date.date.start);
+                    if date.1.is_none() {
+                        date = (
+                            prop.0,
+                            from_value::<notion_props::Date>(prop.1.clone()).ok(),
+                        );
                     }
-                    if let Ok(relation) = from_value::<notion_props::Relation>(prop.1.clone()) {
-                        println!("{}: {}", prop.0, relation.id);
+                    if relation.1.is_none() {
+                        relation = (
+                            prop.0,
+                            from_value::<notion_props::Relation>(prop.1.clone()).ok(),
+                        );
                     }
+                }
+
+                if let (field_name, Some(title)) = title {
+                    print!("{}: ", field_name);
+                    for text in title.title {
+                        print!("{}", text.plain_text)
+                    }
+                    println!()
+                }
+                if let (field_name, Some(checkbox)) = checkbox {
+                    println!("{}: {}", field_name, checkbox.checkbox);
+                }
+                if let (field_name, Some(date)) = date {
+                    println!("{}: {}", field_name, date.date.start);
+                }
+                if let (field_name, Some(relation)) = relation {
+                    println!("{}: {}", field_name, relation.id);
                 }
                 println!()
             }
