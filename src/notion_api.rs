@@ -90,18 +90,27 @@ impl NotionApi {
                     .await
                     .map_err(|e| AppError::ReqwestError(e.to_string(), e))?;
 
-                let json: Value = dbg!(serde_json::from_str(&body)
-                    .map_err(|e| AppError::JsonError(e.to_string(), e))?);
+                let json: Value = serde_json::from_str(&body)
+                    .map_err(|e| AppError::JsonError(e.to_string(), e))?;
 
-                let results = dbg!(json.as_object()); // Start here. Currently have a map which is nice. Need to isolate the values of said map and print for user
+                let results = json
+                    .as_object()
+                    .and_then(|o| dbg!(o.get("results")))
+                    .ok_or_else(|| AppError::MapError("Key 'results' not found in map".to_string()))
+                    .and_then(|v| {
+                        v.as_array()
+                            .ok_or_else(|| AppError::MapError("'results' is not a map".to_string()))
+                    });
 
-                if let Some(results) = results {
-                    for (key, value) in results {
-                        println!("{}: {}", key, value);
+                match results {
+                    Ok(vec) => {
+                        for item in vec {
+                            println!("{}\n", item);
+                        }
+                        Ok(())
                     }
+                    Err(e) => Err(e),
                 }
-
-                Ok(())
             }
             StatusCode::BAD_REQUEST => {
                 let error_message = res

@@ -33,4 +33,7 @@ pub enum AppError {
 
     #[error("{0}")]
     ReqwestError(String, #[source] reqwest::Error),
+
+    #[error("Map error: {0}")]
+    MapError(String),
 }
