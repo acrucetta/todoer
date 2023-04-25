@@ -103,12 +103,12 @@ impl NotionApi {
                         })
                     });
 
-                let properties_for_all_pages = dbg!(results.map(|vec| {
+                let properties_for_all_pages = results.map(|vec| {
                     vec.iter()
                         .filter_map(|item| item.get("properties"))
                         .cloned()
                         .collect::<Vec<Value>>()
-                })?);
+                })?;
 
                 Ok(properties_for_all_pages)
             }
@@ -127,10 +127,6 @@ impl NotionApi {
     }
 
     pub async fn read_database_properties(&self) -> Result<(), AppError> {
-        //         curl 'https://api.notion.com/v1/databases/668d797c-76fa-4934-9b05-ad288df2d136' \
-        //              -H 'Authorization: Bearer '"$NOTION_API_KEY"'' \
-        //              -H 'Notion-Version: 2022-06-28'
-
         let bearer_token = format!("Bearer {}", &self.api_key);
         let post_url = format!("https://api.notion.com/v1/databases/{}", &self.database_id);
 
@@ -152,9 +148,8 @@ impl NotionApi {
                     .await
                     .map_err(|e| AppError::ReqwestError(e.to_string(), e))?;
 
-                let json: Value =
-                    dbg!(serde_json::from_str(&body)
-                        .map_err(|e| AppError::JsonError(e.to_string(), e)))?;
+                let json: Value = serde_json::from_str(&body)
+                    .map_err(|e| AppError::JsonError(e.to_string(), e))?;
 
                 let results = json
                     .as_object()

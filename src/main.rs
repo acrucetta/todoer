@@ -1,14 +1,15 @@
 // src/main.rs
 mod file_handler;
 mod helpers;
-mod notion;
 mod notion_api;
+mod notion_handler;
+mod notion_props;
 mod task;
 mod task_manager;
 
 use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
-use notion::NotionManager;
+use notion_handler::NotionManager;
 
 use std::env;
 use task::Status;

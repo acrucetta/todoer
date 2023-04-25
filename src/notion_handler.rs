@@ -1,12 +1,14 @@
 use dialoguer::Input;
 use dirs::config_dir;
 use serde::{Deserialize, Serialize};
+use serde_json::from_value;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
 use crate::helpers::{self, AppError};
-use crate::notion_api;
+
+use crate::{notion_api, notion_props};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NotionKeys {
@@ -43,9 +45,33 @@ impl NotionManager {
         };
 
         let notion_api = notion_api::NotionApi::new(&notion_api_key, &database_key);
-        match notion_api.read_database_pages().await {
-            Ok(_) => println!("Read executed successfully"),
-            Err(e) => helpers::handle_error(&e.to_string()),
+        let pages = dbg!(notion_api.read_database_pages().await.unwrap_or_else(|e| {
+            helpers::handle_error(&e.to_string());
+            Vec::new()
+        }));
+
+        for page in pages {
+            if let Some(page_properties) = page.as_object() {
+                for prop in page_properties {
+                    if let Ok(title) = from_value::<notion_props::Title>(prop.1.clone()) {
+                        print!("{}: ", prop.0);
+                        for text in title.title {
+                            print!("{}", text.plain_text)
+                        }
+                        println!()
+                    }
+                    if let Ok(checkbox) = from_value::<notion_props::Checkbox>(prop.1.clone()) {
+                        println!("{}: {}", prop.0, checkbox.checkbox);
+                    }
+                    if let Ok(date) = from_value::<notion_props::Date>(prop.1.clone()) {
+                        println!("{}: {}", prop.0, date.date.start);
+                    }
+                    if let Ok(relation) = from_value::<notion_props::Relation>(prop.1.clone()) {
+                        println!("{}: {}", prop.0, relation.id);
+                    }
+                }
+                println!()
+            }
         }
     }
 }
