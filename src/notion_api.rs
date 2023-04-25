@@ -65,7 +65,7 @@ impl NotionApi {
         }
     }
 
-    pub async fn read_database_pages(&self) -> Result<(), AppError> {
+    pub async fn read_database_pages(&self) -> Result<Vec<Value>, AppError> {
         let bearer_token = format!("Bearer {}", &self.api_key);
         let post_url = format!(
             "https://api.notion.com/v1/databases/{}/query",
@@ -103,32 +103,14 @@ impl NotionApi {
                         })
                     });
 
-                let properties = results.and_then(|vec| {
-                    vec.first()
-                        .ok_or_else(|| AppError::VecError("'results' is empty".to_string()))
-                        .and_then(|value| {
-                            value.get("properties").ok_or_else(|| {
-                                AppError::VecError("'properties' not found".to_string())
-                            })
-                        })
-                });
+                let properties_for_all_pages = dbg!(results.map(|vec| {
+                    vec.iter()
+                        .filter_map(|item| item.get("properties"))
+                        .cloned()
+                        .collect::<Vec<Value>>()
+                })?);
 
-                match properties {
-                    Ok(properties) => {
-                        if let Some(props) = properties.as_object() {
-                            for entry in props.iter() {
-                                println!("{}", entry.0)
-                            }
-                        }
-                        // for entry in props.iter() {
-                        //     println!(entry.0)
-                        // }
-                        Ok(())
-                    }
-                    Err(e) => Err(e),
-                }
-
-                // Ok(())
+                Ok(properties_for_all_pages)
             }
             StatusCode::BAD_REQUEST => {
                 let error_message = res

@@ -44,7 +44,7 @@ impl NotionManager {
 
         let notion_api = notion_api::NotionApi::new(&notion_api_key, &database_key);
         match notion_api.read_database_pages().await {
-            Ok(()) => println!("Read executed successfully"),
+            Ok(_) => println!("Read executed successfully"),
             Err(e) => helpers::handle_error(&e.to_string()),
         }
     }
