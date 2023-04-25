@@ -1,7 +1,7 @@
 use serde_json::{json, Value};
 
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
-use reqwest::{Client, Error, StatusCode};
+use reqwest::{Client, StatusCode};
 
 use crate::helpers::AppError;
 
@@ -38,7 +38,6 @@ impl NotionApi {
 
         let body_string = body.to_string();
 
-        let client = Client::new();
         let client = Client::new();
         let res = client
             .post("https://api.notion.com/v1/pages")
