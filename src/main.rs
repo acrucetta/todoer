@@ -82,21 +82,28 @@ async fn main() {
     };
 
     let mut notion_manager = NotionManager::new();
+    let subcommand = matches.subcommand();
+    let (subcommand, sub_m) = if let Some(subc) = subcommand {
+        subc
+    } else {
+        eprintln!("Missing subcommand.");
+        return;
+    };
 
-    match matches.subcommand() {
-        Some(("add", sub_m)) => {
+    match subcommand {
+        "add" => {
             let task = sub_m.get_one::<String>("TASK").unwrap();
             task_manager.add_task(task);
         }
-        Some(("do", sub_m)) => {
+        "do" => {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.adjust_status(id.parse::<u32>().unwrap(), Status::Done);
         }
-        Some(("hold", sub_m)) => {
+        "hold" => {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.adjust_status(id.parse::<u32>().unwrap(), Status::Hold);
         }
-        Some(("reset", sub_m)) => {
+        "reset" => {
             let id = sub_m.get_one::<String>("ID").unwrap();
             // Get the description of the task
             let description = task_manager
@@ -108,11 +115,11 @@ async fn main() {
             // Re-add the task with the same description
             task_manager.add_task(&description);
         }
-        Some(("rm", sub_m)) => {
+        "rm" => {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.remove_task(id.parse::<u32>().unwrap());
         }
-        Some(("ls", sub_m)) => {
+        "ls" => {
             let tag = sub_m.get_one::<String>("tag");
             let status = sub_m.get_one::<String>("status");
             let due = sub_m.get_one::<String>("due");
@@ -145,7 +152,7 @@ async fn main() {
             }
             task_manager.list_tasks(view_args);
         }
-        Some(("nadd", sub_m)) => {
+        "nadd" => {
             let task = match sub_m.try_get_one::<String>("TASK") {
                 Ok(Some(task)) => task,
                 _ => {
@@ -155,11 +162,12 @@ async fn main() {
             };
             notion_manager.add_task(task).await;
         }
-        Some(("nls", _)) => {
+        "nls" => {
             notion_manager.list_all_tasks().await;
         }
-        Some(_) => unreachable!(),
-        None => unreachable!(),
+        otherwise => {
+            eprintln!("Unrecognized subcommand \"{otherwise}\".")
+        }
     }
 
     match save_tasks(&file_path, task_manager) {
