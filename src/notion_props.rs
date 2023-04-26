@@ -1,5 +1,7 @@
-use serde::Deserialize;
+// notion docs: https://developers.notion.com/reference/page-property-values#date
+use serde::{Deserialize, Serialize};
 
+// Checkbox
 #[derive(Debug, Deserialize)]
 pub struct Checkbox {
     pub checkbox: bool,
@@ -7,6 +9,7 @@ pub struct Checkbox {
     pub r#type: String,
 }
 
+// Date
 #[derive(Debug, Deserialize)]
 pub struct Date {
     pub date: InnerDate,
@@ -21,6 +24,18 @@ pub struct InnerDate {
     pub time_zone: Option<String>,
 }
 
+#[derive(Serialize, Debug)]
+pub struct SendDate {
+    date: SendInnerDate,
+}
+
+#[derive(Serialize, Debug)]
+pub struct SendInnerDate {
+    start: String,
+    end: Option<String>,
+}
+
+// Title
 #[derive(Deserialize, Debug)]
 pub struct Title {
     pub id: String,
@@ -53,11 +68,27 @@ pub struct InnerText {
     pub link: Option<Link>,
 }
 
+#[derive(Serialize, Debug)]
+pub struct SendTitle {
+    pub title: Vec<SendText>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct SendText {
+    pub text: SendInnerText,
+}
+
+#[derive(Serialize, Debug)]
+pub struct SendInnerText {
+    pub content: String,
+}
+
 #[derive(Deserialize, Debug)]
 pub struct Link {
     pub url: String,
 }
 
+// Relation
 #[derive(serde::Deserialize)]
 pub struct Relation {
     pub has_more: bool,

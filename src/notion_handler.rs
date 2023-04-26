@@ -25,14 +25,80 @@ impl NotionManager {
         Self { tasks: Vec::new() }
     }
 
-    pub async fn add_task(&mut self, task: &str) {
+    pub async fn add_page(&mut self, task: &str) {
         let (notion_api_key, database_key) = match get_notion_keys() {
             Some(value) => value,
             None => return,
         };
 
         let notion_api = notion_api::NotionApi::new(&notion_api_key, &database_key);
-        match notion_api.add(task).await {
+        let db_props = match notion_api.read_database_properties().await {
+            Ok(props) => props,
+            Err(e) => {
+                helpers::handle_error(&e.to_string());
+                return;
+            }
+        };
+
+        // props and order are not guaranteed, so we loop and stuff each one then print
+        let mut title: (String, Option<notion_props::Title>) = ("".to_string(), None);
+        let mut title_to_send: (String, Option<notion_props::SendTitle>) = ("".to_string(), None);
+        let mut checkbox: (String, Option<notion_props::Checkbox>) = ("".to_string(), None);
+        let mut date: (String, Option<notion_props::Date>) = ("".to_string(), None);
+        let mut relation: (String, Option<notion_props::Relation>) = ("".to_string(), None);
+
+        for prop in db_props {
+            // todo: title is a guarantee, just skip this
+            if title.1.is_none() {
+                title = (
+                    prop.0.clone(),
+                    from_value::<notion_props::Title>(prop.1.clone()).ok(),
+                );
+            }
+            if title_to_send.1.is_none()
+                && from_value::<notion_props::Title>(prop.1.clone()).is_ok()
+            {
+                let content: String = match Input::new().with_prompt("Title?:").interact_text() {
+                    Ok(title) => title,
+                    Err(e) => {
+                        helpers::handle_error(
+                            &AppError::IOError("Failed to get title".to_string(), e).to_string(),
+                        );
+                        return;
+                    }
+                };
+                let inner_text_to_send = notion_props::SendInnerText { content };
+                let text_to_send = notion_props::SendText {
+                    text: inner_text_to_send,
+                };
+                title_to_send = (
+                    prop.0.clone(),
+                    Some(notion_props::SendTitle {
+                        title: vec![text_to_send],
+                    }),
+                );
+            }
+            // if checkbox.1.is_none() {
+            //     checkbox = (
+            //         prop.0.clone(),
+            //         from_value::<notion_props::Checkbox>(prop.1.clone()).ok(),
+            //     );
+            // }
+            // if date.1.is_none() {
+            //     date = (
+            //         prop.0.clone(),
+            //         from_value::<notion_props::Date>(prop.1.clone()).ok(),
+            //     );
+            // }
+            // if relation.1.is_none() {
+            //     relation = (
+            //         prop.0.clone(),
+            //         from_value::<notion_props::Relation>(prop.1.clone()).ok(),
+            //     );
+            // }
+        }
+
+        match notion_api.add(title_to_send).await {
             Ok(()) => println!("Task added successfully"),
             Err(e) => helpers::handle_error(&e.to_string()),
         }

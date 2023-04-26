@@ -166,7 +166,7 @@ async fn main() {
                     return;
                 }
             };
-            notion_manager.add_task(task).await;
+            notion_manager.add_page(task).await;
         }
         "nls" => {
             notion_manager.list_all_tasks().await;

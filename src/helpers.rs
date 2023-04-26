@@ -36,4 +36,7 @@ pub enum AppError {
 
     #[error("Map error: {0}")]
     MapError(String),
+
+    #[error("Vec error: {0}")]
+    VecError(String),
 }
