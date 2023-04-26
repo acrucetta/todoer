@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::from_value;
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::helpers::{self, AppError};
 
@@ -105,18 +105,89 @@ impl NotionManager {
             }
         }
     }
+
+    pub fn remove_notion_keys(&self) {
+        let config_path = match get_config_path() {
+            Ok(config_path) => config_path,
+            Err(e) => {
+                helpers::handle_error(&e.to_string());
+                return;
+            }
+        };
+
+        let content = match fs::read_to_string(&config_path) {
+            Ok(content) => content,
+            Err(e) => {
+                helpers::handle_error(&AppError::IOError("".to_string(), e).to_string());
+                return;
+            }
+        };
+
+        let mut config_json: serde_json::Value = match serde_json::from_str(&content) {
+            Ok(value) => value,
+            Err(e) => {
+                helpers::handle_error(
+                    &AppError::JsonError("Could not deserialize config content".to_string(), e)
+                        .to_string(),
+                );
+                return;
+            }
+        };
+
+        if let Some(obj) = config_json.as_object_mut() {
+            obj.insert(
+                "api_key".to_string(),
+                serde_json::Value::String("".to_string()),
+            );
+            obj.insert(
+                "database_id".to_string(),
+                serde_json::Value::String("".to_string()),
+            );
+        } else {
+            helpers::handle_error("Unable to remove notion keys");
+            return;
+        }
+
+        let serialized_updated_config_content = match serde_json::to_string(&config_json) {
+            Ok(content) => content,
+            Err(e) => {
+                helpers::handle_error(
+                    &AppError::JsonError("Could not serialize new config content".to_string(), e)
+                        .to_string(),
+                );
+                return;
+            }
+        };
+
+        let mut updated_config_file = match File::create(&config_path) {
+            Ok(file) => file,
+            Err(e) => {
+                helpers::handle_error(
+                    &AppError::IOError("Could not create updated config file".to_string(), e)
+                        .to_string(),
+                );
+                return;
+            }
+        };
+
+        match updated_config_file.write_all(serialized_updated_config_content.as_bytes()) {
+            Ok(_) => println!("Successfully removed notion keys"),
+            Err(e) => helpers::handle_error(
+                &AppError::IOError("Could not write update config file".to_string(), e).to_string(),
+            ),
+        }
+    }
 }
 
 fn get_notion_keys() -> Option<(String, String)> {
-    let mut config_path = match config_dir() {
-        Some(path) => path,
-        None => {
-            helpers::handle_error("Failed to find the config directory");
+    let config_path = match get_config_path() {
+        Ok(config_path) => config_path,
+        Err(e) => {
+            helpers::handle_error(&e.to_string());
             return None;
         }
     };
-    config_path.push("todoer");
-    config_path.push("config");
+
     let (notion_api_key, database_key) = if config_path.exists() {
         match read_and_parse_config(&config_path) {
             Ok(keys) => keys,
@@ -141,6 +212,18 @@ fn get_notion_keys() -> Option<(String, String)> {
         }
     };
     Some((notion_api_key, database_key))
+}
+
+fn get_config_path() -> Result<PathBuf, AppError> {
+    let mut config_path = match config_dir() {
+        Some(path) => path,
+        None => {
+            return Err(AppError::ConfigDirNotFound);
+        }
+    };
+    config_path.push("todoer");
+    config_path.push("config");
+    Ok(config_path)
 }
 
 fn prompt_and_store_notion_keys() -> Result<(String, String), AppError> {
@@ -177,7 +260,7 @@ fn prompt_and_store_notion_keys() -> Result<(String, String), AppError> {
     Ok((api_key, database_key))
 }
 
-pub fn read_and_parse_config(config_path: &Path) -> Result<(String, String), AppError> {
+fn read_and_parse_config(config_path: &Path) -> Result<(String, String), AppError> {
     let content = fs::read_to_string(config_path).map_err(|_| AppError::ConfigReadError)?;
 
     let keys: NotionKeys =

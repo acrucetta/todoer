@@ -69,6 +69,11 @@ async fn main() {
                 .about("List all task in the set notion db")
                 .arg_required_else_help(false),
         )
+        .subcommand(
+            Command::new("nrm_keys")
+                .about("Remove notion keys from config")
+                .arg_required_else_help(false),
+        )
         .get_matches();
 
     // We're loading the .env as a binary, so we need to get the path of the binary
@@ -165,6 +170,9 @@ async fn main() {
         }
         "nls" => {
             notion_manager.list_all_tasks().await;
+        }
+        "nrm_keys" => {
+            notion_manager.remove_notion_keys();
         }
         otherwise => {
             eprintln!("Unrecognized subcommand \"{otherwise}\".")
