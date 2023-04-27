@@ -25,7 +25,7 @@ impl NotionManager {
         Self { tasks: Vec::new() }
     }
 
-    pub async fn add_page(&mut self, task: &str) {
+    pub async fn add_page(&mut self, title: &str) {
         let (notion_api_key, database_key) = match get_notion_keys() {
             Some(value) => value,
             None => return,
@@ -52,16 +52,18 @@ impl NotionManager {
             if title_to_send.1.is_none()
                 && from_value::<notion_props::Title>(prop.1.clone()).is_ok()
             {
-                let content: String = match Input::new().with_prompt("Title?").interact_text() {
-                    Ok(title) => title,
-                    Err(e) => {
-                        helpers::handle_error(
-                            &AppError::IOError("Failed to get title".to_string(), e).to_string(),
-                        );
-                        return;
-                    }
+                // let content: String = match Input::new().with_prompt("Title?").interact_text() {
+                //     Ok(title) => title,
+                //     Err(e) => {
+                //         helpers::handle_error(
+                //             &AppError::IOError("Failed to get title".to_string(), e).to_string(),
+                //         );
+                //         return;
+                //     }
+                // };
+                let inner_text_to_send = notion_props::SendInnerText {
+                    content: title.to_string(),
                 };
-                let inner_text_to_send = notion_props::SendInnerText { content };
                 let text_to_send = notion_props::SendText {
                     text: inner_text_to_send,
                 };
