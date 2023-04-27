@@ -39,26 +39,20 @@ impl NotionManager {
                 return;
             }
         };
-
+        // TODO: make sure that we just take the title in automatically
+        // TODO: handle multiple of each type found
         // props and order are not guaranteed, so we loop and stuff each one then print
-        let mut title: (String, Option<notion_props::Title>) = ("".to_string(), None);
         let mut title_to_send: (String, Option<notion_props::SendTitle>) = ("".to_string(), None);
-        let mut checkbox: (String, Option<notion_props::Checkbox>) = ("".to_string(), None);
+        let mut checkbox_to_send: (String, Option<notion_props::SendCheckbox>) =
+            ("".to_string(), None);
         let mut date: (String, Option<notion_props::Date>) = ("".to_string(), None);
         let mut relation: (String, Option<notion_props::Relation>) = ("".to_string(), None);
 
         for prop in db_props {
-            // todo: title is a guarantee, just skip this
-            if title.1.is_none() {
-                title = (
-                    prop.0.clone(),
-                    from_value::<notion_props::Title>(prop.1.clone()).ok(),
-                );
-            }
             if title_to_send.1.is_none()
                 && from_value::<notion_props::Title>(prop.1.clone()).is_ok()
             {
-                let content: String = match Input::new().with_prompt("Title?:").interact_text() {
+                let content: String = match Input::new().with_prompt("Title?").interact_text() {
                     Ok(title) => title,
                     Err(e) => {
                         helpers::handle_error(
@@ -78,12 +72,41 @@ impl NotionManager {
                     }),
                 );
             }
-            // if checkbox.1.is_none() {
-            //     checkbox = (
-            //         prop.0.clone(),
-            //         from_value::<notion_props::Checkbox>(prop.1.clone()).ok(),
-            //     );
-            // }
+            if checkbox_to_send.1.is_none()
+                && from_value::<notion_props::Checkbox>(prop.1.clone()).is_ok()
+            {
+                let bool_to_send: bool = loop {
+                    let user_input: String = match Input::new()
+                        .with_prompt(format!("{} (y/n/true/false)", prop.0).to_string())
+                        .allow_empty(true)
+                        .interact()
+                    {
+                        Ok(value) => value,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            continue;
+                        }
+                    };
+
+                    if user_input.is_empty() {
+                        break false;
+                    }
+
+                    match parse_bool(&user_input) {
+                        Ok(value) => break value,
+                        Err(_) => eprintln!(
+                            "Please provide a valid input (y/n/true/false) or press enter to skip."
+                        ),
+                    }
+                };
+
+                checkbox_to_send = (
+                    prop.0.clone(),
+                    Some(notion_props::SendCheckbox {
+                        checkbox: bool_to_send,
+                    }),
+                );
+            }
             // if date.1.is_none() {
             //     date = (
             //         prop.0.clone(),
@@ -98,7 +121,7 @@ impl NotionManager {
             // }
         }
 
-        match notion_api.add(title_to_send).await {
+        match notion_api.add(title_to_send, checkbox_to_send).await {
             Ok(()) => println!("Task added successfully"),
             Err(e) => helpers::handle_error(&e.to_string()),
         }
@@ -336,5 +359,13 @@ fn read_and_parse_config(config_path: &Path) -> Result<(String, String), AppErro
         Err(AppError::ConfigReadError)
     } else {
         Ok((keys.api_key, keys.database_id))
+    }
+}
+
+fn parse_bool(input: &str) -> Result<bool, &'static str> {
+    match input.to_lowercase().as_str() {
+        "true" | "y" => Ok(true),
+        "false" | "n" => Ok(false),
+        _ => Err("Invalid input"),
     }
 }

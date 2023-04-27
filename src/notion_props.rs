@@ -9,6 +9,11 @@ pub struct Checkbox {
     pub r#type: String,
 }
 
+#[derive(Serialize, Debug)]
+pub struct SendCheckbox {
+    pub checkbox: bool,
+}
+
 // Date
 #[derive(Debug, Deserialize)]
 pub struct Date {

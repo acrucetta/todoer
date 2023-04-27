@@ -22,8 +22,10 @@ impl NotionApi {
     pub async fn add(
         &self,
         title_to_send: (String, Option<notion_props::SendTitle>),
+        checkbox_to_send: (String, Option<notion_props::SendCheckbox>),
     ) -> Result<(), AppError> {
         let (title_key, title_value) = title_to_send;
+        let (checkbox_key, checkbox_value) = checkbox_to_send;
         if let Some(title_value) = title_value {
             let bearer_token = format!("Bearer {}", &self.api_key);
 
@@ -31,6 +33,7 @@ impl NotionApi {
                 "parent": { "database_id": &self.database_id },
                 "properties": {
                     title_key: title_value,
+                    checkbox_key: checkbox_value
                 }
             });
 
