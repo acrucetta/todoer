@@ -50,7 +50,7 @@ impl NotionManager {
             HashMap::new();
 
         for prop in db_props {
-            let property_type = prop.1["type"].as_str().unwrap_or("");
+            let property_type: &str = prop.1["type"].as_str().unwrap_or("");
 
             match property_type {
                 "title" => {
@@ -76,7 +76,9 @@ impl NotionManager {
                         {
                             Ok(value) => value,
                             Err(e) => {
-                                eprintln!("Error: {}", e);
+                                helpers::handle_error(
+                                    &AppError::IOError(e.to_string(), e).to_string(),
+                                );
                                 continue;
                             }
                         };
@@ -108,7 +110,9 @@ impl NotionManager {
                         {
                             Ok(value) => value,
                             Err(e) => {
-                                eprintln!("Error: {}", e);
+                                helpers::handle_error(
+                                    &AppError::IOError(e.to_string(), e).to_string(),
+                                );
                                 continue;
                             }
                         };
@@ -154,8 +158,9 @@ impl NotionManager {
                         {
                             Ok(value) => value,
                             Err(e) => {
-                                eprintln!("Error: {}", e);
-
+                                helpers::handle_error(
+                                    &AppError::IOError(e.to_string(), e).to_string(),
+                                );
                                 continue;
                             }
                         };
@@ -215,60 +220,73 @@ impl NotionManager {
         });
 
         for page in pages {
-            if let Some(page_properties) = page.as_object() {
-                // props and order are not guaranteed, so we loop and stuff each one then print
-                let mut title: (&str, Option<notion_props::Title>) = ("", None);
-                let mut checkbox: (&str, Option<notion_props::Checkbox>) = ("", None);
-                let mut date: (&str, Option<notion_props::Date>) = ("", None);
-                let mut relation: (&str, Option<notion_props::Relation>) = ("", None);
+            let mut title_property: (&str, Option<notion_props::Title>) = ("", None);
+            let mut checkbox_properties: HashMap<&str, Option<notion_props::Checkbox>> =
+                HashMap::new();
+            let mut date_properties: HashMap<&str, Option<notion_props::Date>> = HashMap::new();
+            let mut relation_properties: HashMap<&str, Option<notion_props::Relation>> =
+                HashMap::new();
 
+            if let Some(page_properties) = page.as_object() {
                 for prop in page_properties {
-                    if title.1.is_none() {
-                        title = (
-                            prop.0,
-                            from_value::<notion_props::Title>(prop.1.clone()).ok(),
-                        );
-                    }
-                    if checkbox.1.is_none() {
-                        checkbox = (
-                            prop.0,
-                            from_value::<notion_props::Checkbox>(prop.1.clone()).ok(),
-                        );
-                    }
-                    if date.1.is_none() {
-                        date = (
-                            prop.0,
-                            from_value::<notion_props::Date>(prop.1.clone()).ok(),
-                        );
-                    }
-                    if relation.1.is_none() {
-                        relation = (
-                            prop.0,
-                            from_value::<notion_props::Relation>(prop.1.clone()).ok(),
-                        );
+                    let property_type: &str = prop.1["type"].as_str().unwrap_or("");
+                    match property_type {
+                        "title" => {
+                            title_property = (
+                                &prop.0,
+                                from_value::<notion_props::Title>(prop.1.clone()).ok(),
+                            );
+                        }
+                        "checkbox" => {
+                            checkbox_properties.insert(
+                                &prop.0,
+                                from_value::<notion_props::Checkbox>(prop.1.clone()).ok(),
+                            );
+                        }
+                        "date" => {
+                            date_properties.insert(
+                                prop.0,
+                                from_value::<notion_props::Date>(prop.1.clone()).ok(),
+                            );
+                        }
+                        "relation" => {
+                            relation_properties.insert(
+                                prop.0,
+                                from_value::<notion_props::Relation>(prop.1.clone()).ok(),
+                            );
+                        }
+                        _ => {
+                            helpers::handle_error("Read unsupported property type");
+                        }
                     }
                 }
 
-                if let (field_name, Some(title)) = title {
+                if let (field_name, Some(title)) = title_property {
                     print!("{}: ", field_name);
                     for text in title.title {
                         print!("{}", text.plain_text)
                     }
                     println!()
                 }
-                if let (field_name, Some(checkbox)) = checkbox {
-                    println!("{}: {}", field_name, checkbox.checkbox);
+                for (field_name, value) in checkbox_properties {
+                    if let Some(checkbox) = value {
+                        println!("{}: {}", field_name, checkbox.checkbox);
+                    }
                 }
-                if let (field_name, Some(date)) = date {
-                    println!(
-                        "{}: {}",
-                        field_name,
-                        date.date
-                            .map_or_else(|| "null".to_string(), |date| date.start)
-                    );
+                for (field_name, value) in date_properties {
+                    if let Some(date) = value {
+                        println!(
+                            "{}: {}",
+                            field_name,
+                            date.date
+                                .map_or_else(|| "null".to_string(), |date| date.start)
+                        );
+                    }
                 }
-                if let (field_name, Some(relation)) = relation {
-                    println!("{}: {}", field_name, relation.id);
+                for (field_name, value) in relation_properties {
+                    if let Some(relation) = value {
+                        println!("{}: {}", field_name, relation.id);
+                    }
                 }
                 println!()
             }
