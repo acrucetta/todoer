@@ -56,7 +56,6 @@ impl NotionApi {
             "parent": { "database_id": &self.database_id },
             "properties": properties
         });
-        dbg!(&body);
         let body_string = body.to_string();
 
         let client = Client::new();
@@ -130,6 +129,8 @@ impl NotionApi {
                         .cloned()
                         .collect::<Vec<Value>>()
                 })?;
+
+                println!("Successfully read from notion db \n");
 
                 Ok(properties_for_all_pages)
             }
