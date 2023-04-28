@@ -60,18 +60,18 @@ async fn main() {
         )
         .subcommand(
             Command::new("nadd")
-                .about("Add a task to the set notion db")
+                .about("Add a new task to the specified Notion database, with user input for each property")
                 .arg(arg!([TASK]))
                 .arg_required_else_help(true),
         )
         .subcommand(
             Command::new("nls")
-                .about("List all task in the set notion db")
+                .about("List all tasks in the specified Notion database, displaying their properties")
                 .arg_required_else_help(false),
         )
         .subcommand(
             Command::new("nrm_keys")
-                .about("Remove notion keys from config")
+                .about("Remove the stored Notion API and database keys from the application configuration")
                 .arg_required_else_help(false),
         )
         .get_matches();
