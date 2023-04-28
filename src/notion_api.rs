@@ -23,20 +23,34 @@ impl NotionApi {
         &self,
         title_to_send: (String, Option<notion_props::SendTitle>),
         checkbox_to_send: (String, Option<notion_props::SendCheckbox>),
+        date_to_send: (String, Option<notion_props::SendDate>),
+        relation_to_send: (String, Option<notion_props::SendRelation>),
     ) -> Result<(), AppError> {
         let (title_key, title_value) = title_to_send;
         let (checkbox_key, checkbox_value) = checkbox_to_send;
+        let (date_key, date_value) = date_to_send;
+        let (relation_key, relation_value) = relation_to_send;
         if let Some(title_value) = title_value {
             let bearer_token = format!("Bearer {}", &self.api_key);
 
+            let mut properties = json!({});
+
+            properties[title_key] = json!(title_value);
+            if let Some(checkbox_value) = checkbox_value {
+                properties[checkbox_key] = json!(checkbox_value);
+            }
+            if let Some(date_value) = date_value {
+                properties[date_key] = json!(date_value);
+            }
+            if let Some(relation_value) = relation_value {
+                properties[relation_key] = json!(relation_value);
+            }
+
             let body = json!({
                 "parent": { "database_id": &self.database_id },
-                "properties": {
-                    title_key: title_value,
-                    checkbox_key: checkbox_value
-                }
+                "properties": properties
             });
-
+            dbg!(&body);
             let body_string = body.to_string();
 
             let client = Client::new();
@@ -183,7 +197,7 @@ impl NotionApi {
                     .as_object()
                     .ok_or_else(|| AppError::MapError("Properties isn't an object".to_string()))?;
 
-                Ok(dbg!(properties.clone()))
+                Ok(properties.clone())
             }
             StatusCode::BAD_REQUEST => {
                 let error_message = res

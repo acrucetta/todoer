@@ -17,7 +17,7 @@ pub struct SendCheckbox {
 // Date
 #[derive(Debug, Deserialize)]
 pub struct Date {
-    pub date: InnerDate,
+    pub date: Option<InnerDate>,
     pub id: String,
     pub r#type: String,
 }
@@ -31,13 +31,13 @@ pub struct InnerDate {
 
 #[derive(Serialize, Debug)]
 pub struct SendDate {
-    date: SendInnerDate,
+    pub date: SendInnerDate,
 }
 
 #[derive(Serialize, Debug)]
 pub struct SendInnerDate {
-    start: String,
-    end: Option<String>,
+    pub start: String,
+    pub end: Option<String>,
 }
 
 // Title
@@ -94,10 +94,20 @@ pub struct Link {
 }
 
 // Relation
-#[derive(serde::Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Relation {
     pub has_more: bool,
     pub id: String,
     pub relation: Vec<serde_json::Value>,
     pub r#type: String,
+}
+
+#[derive(Serialize, Debug)]
+pub struct SendRelation {
+    pub relation: Vec<SendRelationId>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct SendRelationId {
+    pub id: String,
 }

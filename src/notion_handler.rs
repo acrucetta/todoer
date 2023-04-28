@@ -1,10 +1,12 @@
 use dialoguer::Input;
 use dirs::config_dir;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::from_value;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use uuid::Uuid;
 
 use crate::helpers::{self, AppError};
 
@@ -39,28 +41,20 @@ impl NotionManager {
                 return;
             }
         };
-        // TODO: make sure that we just take the title in automatically
         // TODO: handle multiple of each type found
         // props and order are not guaranteed, so we loop and stuff each one then print
         let mut title_to_send: (String, Option<notion_props::SendTitle>) = ("".to_string(), None);
         let mut checkbox_to_send: (String, Option<notion_props::SendCheckbox>) =
             ("".to_string(), None);
-        let mut date: (String, Option<notion_props::Date>) = ("".to_string(), None);
-        let mut relation: (String, Option<notion_props::Relation>) = ("".to_string(), None);
+        let mut date_to_send: (String, Option<notion_props::SendDate>) = ("".to_string(), None);
+        let mut relation_to_send: (String, Option<notion_props::SendRelation>) =
+            ("".to_string(), None);
 
-        for prop in db_props {
+        for prop in dbg!(db_props) {
+            let property_type = prop.1["type"].as_str().unwrap_or("");
             if title_to_send.1.is_none()
                 && from_value::<notion_props::Title>(prop.1.clone()).is_ok()
             {
-                // let content: String = match Input::new().with_prompt("Title?").interact_text() {
-                //     Ok(title) => title,
-                //     Err(e) => {
-                //         helpers::handle_error(
-                //             &AppError::IOError("Failed to get title".to_string(), e).to_string(),
-                //         );
-                //         return;
-                //     }
-                // };
                 let inner_text_to_send = notion_props::SendInnerText {
                     content: title.to_string(),
                 };
@@ -74,9 +68,7 @@ impl NotionManager {
                     }),
                 );
             }
-            if checkbox_to_send.1.is_none()
-                && from_value::<notion_props::Checkbox>(prop.1.clone()).is_ok()
-            {
+            if checkbox_to_send.1.is_none() && property_type == "checkbox" {
                 let bool_to_send: bool = loop {
                     let user_input: String = match Input::new()
                         .with_prompt(format!("{} (y/n/true/false)", prop.0).to_string())
@@ -109,21 +101,101 @@ impl NotionManager {
                     }),
                 );
             }
-            // if date.1.is_none() {
-            //     date = (
-            //         prop.0.clone(),
-            //         from_value::<notion_props::Date>(prop.1.clone()).ok(),
-            //     );
-            // }
-            // if relation.1.is_none() {
-            //     relation = (
-            //         prop.0.clone(),
-            //         from_value::<notion_props::Relation>(prop.1.clone()).ok(),
-            //     );
-            // }
+            if date_to_send.1.is_none() && property_type == "date" {
+                dbg!(&prop.0);
+                let inner_date_to_send = loop {
+                    let user_input: String = match Input::new()
+                        .with_prompt(format!("{} (yyyy-mm-dd)", prop.0).to_string())
+                        .interact()
+                    {
+                        Ok(value) => value,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            continue;
+                        }
+                    };
+
+                    let date = match chrono::NaiveDate::parse_from_str(&user_input, "%Y-%m-%d") {
+                        Ok(date) => date,
+                        Err(_) => {
+                            eprintln!("Please provide a valid input (yyyy-mm-dd)");
+                            continue;
+                        }
+                    };
+
+                    let iso_date = date.format("%Y-%m-%d").to_string();
+
+                    if iso_date != user_input {
+                        eprintln!(
+                            "Please provide a valid input in the ISO 8601 format (yyyy-mm-dd)"
+                        );
+                        continue;
+                    }
+
+                    break notion_props::SendInnerDate {
+                        start: iso_date,
+                        end: None,
+                    };
+                };
+
+                date_to_send = (
+                    prop.0.clone(),
+                    Some(notion_props::SendDate {
+                        date: inner_date_to_send,
+                    }),
+                );
+            }
+            if relation_to_send.1.is_none() && property_type == "relation" {
+                let relations_to_send: Vec<String> = loop {
+                    let user_input: String = match Input::new()
+                        .with_prompt(
+                            format!("{} (separate UUIDv4 with commas)", prop.0).to_string(),
+                        )
+                        .allow_empty(true)
+                        .interact()
+                    {
+                        Ok(value) => value,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            continue;
+                        }
+                    };
+
+                    if user_input.is_empty() {
+                        break Vec::new();
+                    } else if is_valid_relation_input(&user_input) {
+                        break user_input
+                            .split(',')
+                            .map(|s| s.trim().to_string())
+                            .collect();
+                    } else {
+                        eprintln!("Please provide valid UUIDv4 (separate with commas) or press enter to skip.");
+                    }
+                };
+
+                let send_relation_ids: Vec<notion_props::SendRelationId> = relations_to_send
+                    .iter()
+                    .map(|id| notion_props::SendRelationId { id: id.clone() })
+                    .collect();
+
+                relation_to_send = (
+                    prop.0.clone(),
+                    Some(notion_props::SendRelation {
+                        relation: send_relation_ids,
+                    }),
+                );
+            }
         }
 
-        match notion_api.add(title_to_send, checkbox_to_send).await {
+        match notion_api
+            .add(
+                title_to_send,
+                checkbox_to_send,
+                date_to_send,
+                relation_to_send,
+            )
+            .await
+        {
             Ok(()) => println!("Task added successfully"),
             Err(e) => helpers::handle_error(&e.to_string()),
         }
@@ -187,7 +259,12 @@ impl NotionManager {
                     println!("{}: {}", field_name, checkbox.checkbox);
                 }
                 if let (field_name, Some(date)) = date {
-                    println!("{}: {}", field_name, date.date.start);
+                    println!(
+                        "{}: {}",
+                        field_name,
+                        date.date
+                            .map_or_else(|| "null".to_string(), |date| date.start)
+                    );
                 }
                 if let (field_name, Some(relation)) = relation {
                     println!("{}: {}", field_name, relation.id);
@@ -370,4 +447,13 @@ fn parse_bool(input: &str) -> Result<bool, &'static str> {
         "false" | "n" => Ok(false),
         _ => Err("Invalid input"),
     }
+}
+
+fn is_valid_relation_input(input: &str) -> bool {
+    input.split(',').all(|s| {
+        !s.is_empty()
+            && Uuid::parse_str(s.trim()).map_or(false, |uuid| {
+                uuid.get_version() == Some(uuid::Version::Random)
+            })
+    })
 }
