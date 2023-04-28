@@ -1,6 +1,5 @@
 use dialoguer::Input;
 use dirs::config_dir;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::from_value;
 use std::fs::{self, File};
@@ -50,7 +49,7 @@ impl NotionManager {
         let mut relation_to_send: (String, Option<notion_props::SendRelation>) =
             ("".to_string(), None);
 
-        for prop in dbg!(db_props) {
+        for prop in db_props {
             let property_type = prop.1["type"].as_str().unwrap_or("");
             if title_to_send.1.is_none()
                 && from_value::<notion_props::Title>(prop.1.clone()).is_ok()
@@ -102,7 +101,6 @@ impl NotionManager {
                 );
             }
             if date_to_send.1.is_none() && property_type == "date" {
-                dbg!(&prop.0);
                 let inner_date_to_send = loop {
                     let user_input: String = match Input::new()
                         .with_prompt(format!("{} (yyyy-mm-dd)", prop.0).to_string())
@@ -124,7 +122,6 @@ impl NotionManager {
                     };
 
                     let iso_date = date.format("%Y-%m-%d").to_string();
-
                     if iso_date != user_input {
                         eprintln!(
                             "Please provide a valid input in the ISO 8601 format (yyyy-mm-dd)"
@@ -208,10 +205,10 @@ impl NotionManager {
         };
 
         let notion_api = notion_api::NotionApi::new(&notion_api_key, &database_key);
-        let pages = dbg!(notion_api.read_database_pages().await.unwrap_or_else(|e| {
+        let pages = notion_api.read_database_pages().await.unwrap_or_else(|e| {
             helpers::handle_error(&e.to_string());
             Vec::new()
-        }));
+        });
 
         for page in pages {
             if let Some(page_properties) = page.as_object() {
