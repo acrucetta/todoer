@@ -233,13 +233,13 @@ impl NotionManager {
                     match property_type {
                         "title" => {
                             title_property = (
-                                &prop.0,
+                                prop.0,
                                 from_value::<notion_props::Title>(prop.1.clone()).ok(),
                             );
                         }
                         "checkbox" => {
                             checkbox_properties.insert(
-                                &prop.0,
+                                prop.0,
                                 from_value::<notion_props::Checkbox>(prop.1.clone()).ok(),
                             );
                         }
