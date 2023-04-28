@@ -2,6 +2,7 @@ use dialoguer::Input;
 use dirs::config_dir;
 use serde::{Deserialize, Serialize};
 use serde_json::from_value;
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -40,156 +41,159 @@ impl NotionManager {
                 return;
             }
         };
-        // TODO: handle multiple of each type found
-        // props and order are not guaranteed, so we loop and stuff each one then print
-        let mut title_to_send: (String, Option<notion_props::SendTitle>) = ("".to_string(), None);
-        let mut checkbox_to_send: (String, Option<notion_props::SendCheckbox>) =
-            ("".to_string(), None);
-        let mut date_to_send: (String, Option<notion_props::SendDate>) = ("".to_string(), None);
-        let mut relation_to_send: (String, Option<notion_props::SendRelation>) =
-            ("".to_string(), None);
+
+        let mut title_property: (String, Option<notion_props::SendTitle>) = ("".to_string(), None);
+        let mut checkbox_properties: HashMap<String, Option<notion_props::SendCheckbox>> =
+            HashMap::new();
+        let mut date_properties: HashMap<String, Option<notion_props::SendDate>> = HashMap::new();
+        let mut relation_properties: HashMap<String, Option<notion_props::SendRelation>> =
+            HashMap::new();
 
         for prop in db_props {
             let property_type = prop.1["type"].as_str().unwrap_or("");
-            if title_to_send.1.is_none()
-                && from_value::<notion_props::Title>(prop.1.clone()).is_ok()
-            {
-                let inner_text_to_send = notion_props::SendInnerText {
-                    content: title.to_string(),
-                };
-                let text_to_send = notion_props::SendText {
-                    text: inner_text_to_send,
-                };
-                title_to_send = (
-                    prop.0.clone(),
-                    Some(notion_props::SendTitle {
-                        title: vec![text_to_send],
-                    }),
-                );
-            }
-            if checkbox_to_send.1.is_none() && property_type == "checkbox" {
-                let bool_to_send: bool = loop {
-                    let user_input: String = match Input::new()
-                        .with_prompt(format!("{} (y/n/true/false)", prop.0).to_string())
-                        .allow_empty(true)
-                        .interact()
-                    {
-                        Ok(value) => value,
-                        Err(e) => {
-                            eprintln!("Error: {}", e);
-                            continue;
+
+            match property_type {
+                "title" => {
+                    let inner_text_to_send = notion_props::SendInnerText {
+                        content: title.to_string(),
+                    };
+                    let text_to_send = notion_props::SendText {
+                        text: inner_text_to_send,
+                    };
+                    title_property = (
+                        prop.0.clone(),
+                        Some(notion_props::SendTitle {
+                            title: vec![text_to_send],
+                        }),
+                    );
+                }
+                "checkbox" => {
+                    let bool_to_send: bool = loop {
+                        let user_input: String = match Input::new()
+                            .with_prompt(format!("{} (y/n/true/false)", prop.0).to_string())
+                            .allow_empty(true)
+                            .interact()
+                        {
+                            Ok(value) => value,
+                            Err(e) => {
+                                eprintln!("Error: {}", e);
+                                continue;
+                            }
+                        };
+
+                        if user_input.is_empty() {
+                            break false;
+                        }
+
+                        match parse_bool(&user_input) {
+                            Ok(value) => break value,
+                            Err(_) => eprintln!(
+                                "Please provide a valid input (y/n/true/false) or press enter to skip."
+                            ),
                         }
                     };
 
-                    if user_input.is_empty() {
-                        break false;
-                    }
+                    checkbox_properties.insert(
+                        prop.0.clone(),
+                        Some(notion_props::SendCheckbox {
+                            checkbox: bool_to_send,
+                        }),
+                    );
+                }
+                "date" => {
+                    let inner_date_to_send = loop {
+                        let user_input: String = match Input::new()
+                            .with_prompt(format!("{} (yyyy-mm-dd)", prop.0).to_string())
+                            .interact()
+                        {
+                            Ok(value) => value,
+                            Err(e) => {
+                                eprintln!("Error: {}", e);
+                                continue;
+                            }
+                        };
 
-                    match parse_bool(&user_input) {
-                        Ok(value) => break value,
-                        Err(_) => eprintln!(
-                            "Please provide a valid input (y/n/true/false) or press enter to skip."
-                        ),
-                    }
-                };
+                        let date = match chrono::NaiveDate::parse_from_str(&user_input, "%Y-%m-%d")
+                        {
+                            Ok(date) => date,
+                            Err(_) => {
+                                eprintln!("Please provide a valid input (yyyy-mm-dd)");
+                                continue;
+                            }
+                        };
 
-                checkbox_to_send = (
-                    prop.0.clone(),
-                    Some(notion_props::SendCheckbox {
-                        checkbox: bool_to_send,
-                    }),
-                );
-            }
-            if date_to_send.1.is_none() && property_type == "date" {
-                let inner_date_to_send = loop {
-                    let user_input: String = match Input::new()
-                        .with_prompt(format!("{} (yyyy-mm-dd)", prop.0).to_string())
-                        .interact()
-                    {
-                        Ok(value) => value,
-                        Err(e) => {
-                            eprintln!("Error: {}", e);
+                        let iso_date = date.format("%Y-%m-%d").to_string();
+                        if iso_date != user_input {
+                            eprintln!(
+                                "Please provide a valid input in the ISO 8601 format (yyyy-mm-dd)"
+                            );
                             continue;
+                        }
+
+                        break notion_props::SendInnerDate {
+                            start: iso_date,
+                            end: None,
+                        };
+                    };
+
+                    date_properties.insert(
+                        prop.0.clone(),
+                        Some(notion_props::SendDate {
+                            date: inner_date_to_send,
+                        }),
+                    );
+                }
+                "relation" => {
+                    let relations_to_send: Vec<String> = loop {
+                        let user_input: String = match Input::new()
+                            .with_prompt(
+                                format!("{} (separate UUIDv4 with commas)", prop.0).to_string(),
+                            )
+                            .allow_empty(true)
+                            .interact()
+                        {
+                            Ok(value) => value,
+                            Err(e) => {
+                                eprintln!("Error: {}", e);
+
+                                continue;
+                            }
+                        };
+
+                        if user_input.is_empty() {
+                            break Vec::new();
+                        } else if is_valid_relation_input(&user_input) {
+                            break user_input
+                                .split(',')
+                                .map(|s| s.trim().to_string())
+                                .collect();
+                        } else {
+                            eprintln!("Please provide valid UUIDv4 (separate with commas) or press enter to skip.");
                         }
                     };
 
-                    let date = match chrono::NaiveDate::parse_from_str(&user_input, "%Y-%m-%d") {
-                        Ok(date) => date,
-                        Err(_) => {
-                            eprintln!("Please provide a valid input (yyyy-mm-dd)");
-                            continue;
-                        }
-                    };
+                    let relation_ids_to_send: Vec<notion_props::SendRelationId> = relations_to_send
+                        .iter()
+                        .map(|id| notion_props::SendRelationId { id: id.clone() })
+                        .collect();
 
-                    let iso_date = date.format("%Y-%m-%d").to_string();
-                    if iso_date != user_input {
-                        eprintln!(
-                            "Please provide a valid input in the ISO 8601 format (yyyy-mm-dd)"
-                        );
-                        continue;
-                    }
-
-                    break notion_props::SendInnerDate {
-                        start: iso_date,
-                        end: None,
-                    };
-                };
-
-                date_to_send = (
-                    prop.0.clone(),
-                    Some(notion_props::SendDate {
-                        date: inner_date_to_send,
-                    }),
-                );
-            }
-            if relation_to_send.1.is_none() && property_type == "relation" {
-                let relations_to_send: Vec<String> = loop {
-                    let user_input: String = match Input::new()
-                        .with_prompt(
-                            format!("{} (separate UUIDv4 with commas)", prop.0).to_string(),
-                        )
-                        .allow_empty(true)
-                        .interact()
-                    {
-                        Ok(value) => value,
-                        Err(e) => {
-                            eprintln!("Error: {}", e);
-                            continue;
-                        }
-                    };
-
-                    if user_input.is_empty() {
-                        break Vec::new();
-                    } else if is_valid_relation_input(&user_input) {
-                        break user_input
-                            .split(',')
-                            .map(|s| s.trim().to_string())
-                            .collect();
-                    } else {
-                        eprintln!("Please provide valid UUIDv4 (separate with commas) or press enter to skip.");
-                    }
-                };
-
-                let send_relation_ids: Vec<notion_props::SendRelationId> = relations_to_send
-                    .iter()
-                    .map(|id| notion_props::SendRelationId { id: id.clone() })
-                    .collect();
-
-                relation_to_send = (
-                    prop.0.clone(),
-                    Some(notion_props::SendRelation {
-                        relation: send_relation_ids,
-                    }),
-                );
+                    relation_properties.insert(
+                        prop.0.clone(),
+                        Some(notion_props::SendRelation {
+                            relation: relation_ids_to_send,
+                        }),
+                    );
+                }
+                _ => {}
             }
         }
 
         match notion_api
             .add(
-                title_to_send,
-                checkbox_to_send,
-                date_to_send,
-                relation_to_send,
+                title_property,
+                checkbox_properties,
+                date_properties,
+                relation_properties,
             )
             .await
         {

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde_json::{json, Map, Value};
 
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
@@ -21,67 +23,66 @@ impl NotionApi {
 
     pub async fn add(
         &self,
-        title_to_send: (String, Option<notion_props::SendTitle>),
-        checkbox_to_send: (String, Option<notion_props::SendCheckbox>),
-        date_to_send: (String, Option<notion_props::SendDate>),
-        relation_to_send: (String, Option<notion_props::SendRelation>),
+        title_properties: (String, Option<notion_props::SendTitle>),
+        checkbox_properties: HashMap<String, Option<notion_props::SendCheckbox>>,
+        date_properties: HashMap<String, Option<notion_props::SendDate>>,
+        relation_properties: HashMap<String, Option<notion_props::SendRelation>>,
     ) -> Result<(), AppError> {
-        let (title_key, title_value) = title_to_send;
-        let (checkbox_key, checkbox_value) = checkbox_to_send;
-        let (date_key, date_value) = date_to_send;
-        let (relation_key, relation_value) = relation_to_send;
-        if let Some(title_value) = title_value {
-            let bearer_token = format!("Bearer {}", &self.api_key);
+        let mut properties = json!({});
 
-            let mut properties = json!({});
+        if let Some(title_value) = title_properties.1 {
+            properties[title_properties.0] = json!(title_value);
+        }
 
-            properties[title_key] = json!(title_value);
-            if let Some(checkbox_value) = checkbox_value {
-                properties[checkbox_key] = json!(checkbox_value);
+        for (key, value) in checkbox_properties {
+            if let Some(checkbox_value) = value {
+                properties[key] = json!(checkbox_value);
             }
-            if let Some(date_value) = date_value {
-                properties[date_key] = json!(date_value);
-            }
-            if let Some(relation_value) = relation_value {
-                properties[relation_key] = json!(relation_value);
-            }
+        }
 
-            let body = json!({
-                "parent": { "database_id": &self.database_id },
-                "properties": properties
-            });
-            dbg!(&body);
-            let body_string = body.to_string();
-
-            let client = Client::new();
-            let res = client
-                .post("https://api.notion.com/v1/pages")
-                .header(AUTHORIZATION, bearer_token)
-                .header(CONTENT_TYPE, "application/json")
-                .header("Notion-Version", "2021-08-16")
-                .body(body_string)
-                .send()
-                .await
-                .map_err(|e| AppError::ReqwestError(e.to_string(), e))?;
-
-            match res.status() {
-                StatusCode::OK => Ok(()),
-                StatusCode::BAD_REQUEST => {
-                    let error_message = res
-                        .text()
-                        .await
-                        .map_err(|e| AppError::ReqwestError(e.to_string(), e))?;
-                    Err(AppError::InvalidArgument(error_message))
-                }
-                _ => Err(AppError::UnknownError(format!(
-                    "Notion API returned an unexpected response status: {}",
-                    res.status()
-                ))),
+        for (key, value) in date_properties {
+            if let Some(date_value) = value {
+                properties[key] = json!(date_value);
             }
-        } else {
-            Err(AppError::InvalidArgument(
-                "Title value is missing in title_to_send".to_string(),
-            ))
+        }
+
+        for (key, value) in relation_properties {
+            if let Some(relation_value) = value {
+                properties[key] = json!(relation_value);
+            }
+        }
+
+        let body = json!({
+            "parent": { "database_id": &self.database_id },
+            "properties": properties
+        });
+        dbg!(&body);
+        let body_string = body.to_string();
+
+        let client = Client::new();
+        let res = client
+            .post("https://api.notion.com/v1/pages")
+            .header(AUTHORIZATION, format!("Bearer {}", &self.api_key))
+            .header(CONTENT_TYPE, "application/json")
+            .header("Notion-Version", "2021-08-16")
+            .body(body_string)
+            .send()
+            .await
+            .map_err(|e| AppError::ReqwestError(e.to_string(), e))?;
+
+        match res.status() {
+            StatusCode::OK => Ok(()),
+            StatusCode::BAD_REQUEST => {
+                let error_message = res
+                    .text()
+                    .await
+                    .map_err(|e| AppError::ReqwestError(e.to_string(), e))?;
+                Err(AppError::InvalidArgument(error_message))
+            }
+            _ => Err(AppError::UnknownError(format!(
+                "Notion API returned an unexpected response status: {}",
+                res.status()
+            ))),
         }
     }
 
