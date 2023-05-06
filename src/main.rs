@@ -1,15 +1,22 @@
 // src/main.rs
 mod file_handler;
+mod helpers;
+mod notion_api;
+mod notion_handler;
+mod notion_props;
 mod task;
 mod task_manager;
 
 use clap::{arg, command, Command};
 use file_handler::{get_output_dir, save_tasks};
+use notion_handler::NotionManager;
 
 use std::env;
 use task::Status;
 use task_manager::{TaskManager, ViewFilters};
-fn main() {
+
+#[tokio::main]
+async fn main() {
     let matches = command!()
         .subcommand_required(true)
         .subcommand(
@@ -51,10 +58,25 @@ fn main() {
                 .arg(arg!(--priority[PRIORITY]))
                 .arg(arg!(--view[VIEW])),
         )
+        .subcommand(
+            Command::new("nadd")
+                .about("Add a new task to the specified Notion database, with user input for each property")
+                .arg(arg!([TASK]))
+                .arg_required_else_help(true),
+        )
+        .subcommand(
+            Command::new("nls")
+                .about("List all tasks in the specified Notion database, displaying their properties")
+                .arg_required_else_help(false),
+        )
+        .subcommand(
+            Command::new("nrm_keys")
+                .about("Remove the stored Notion API and database keys from the application configuration")
+                .arg_required_else_help(false),
+        )
         .get_matches();
 
     // We're loading the .env as a binary, so we need to get the path of the binary
-
     let file_path = format!("{}/tasks.csv", get_output_dir());
 
     let mut task_manager = match TaskManager::from_file(&file_path) {
@@ -65,20 +87,29 @@ fn main() {
         }
     };
 
-    match matches.subcommand() {
-        Some(("add", sub_m)) => {
+    let mut notion_manager = NotionManager::new();
+    let subcommand = matches.subcommand();
+    let (subcommand, sub_m) = if let Some(subc) = subcommand {
+        subc
+    } else {
+        eprintln!("Missing subcommand.");
+        return;
+    };
+
+    match subcommand {
+        "add" => {
             let task = sub_m.get_one::<String>("TASK").unwrap();
             task_manager.add_task(task);
         }
-        Some(("do", sub_m)) => {
+        "do" => {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.adjust_status(id.parse::<u32>().unwrap(), Status::Done);
         }
-        Some(("hold", sub_m)) => {
+        "hold" => {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.adjust_status(id.parse::<u32>().unwrap(), Status::Hold);
         }
-        Some(("reset", sub_m)) => {
+        "reset" => {
             let id = sub_m.get_one::<String>("ID").unwrap();
             // Get the description of the task
             let description = task_manager
@@ -90,11 +121,11 @@ fn main() {
             // Re-add the task with the same description
             task_manager.add_task(&description);
         }
-        Some(("rm", sub_m)) => {
+        "rm" => {
             let id = sub_m.get_one::<String>("ID").unwrap();
             task_manager.remove_task(id.parse::<u32>().unwrap());
         }
-        Some(("ls", sub_m)) => {
+        "ls" => {
             let tag = sub_m.get_one::<String>("tag");
             let status = sub_m.get_one::<String>("status");
             let due = sub_m.get_one::<String>("due");
@@ -127,8 +158,25 @@ fn main() {
             }
             task_manager.list_tasks(view_args);
         }
-        Some(_) => unreachable!(),
-        None => unreachable!(),
+        "nadd" => {
+            let task = match sub_m.try_get_one::<String>("TASK") {
+                Ok(Some(task)) => task,
+                _ => {
+                    helpers::handle_error("Missing or invalid task argument");
+                    return;
+                }
+            };
+            notion_manager.add_page(task).await;
+        }
+        "nls" => {
+            notion_manager.list_all_tasks().await;
+        }
+        "nrm_keys" => {
+            notion_manager.remove_notion_keys();
+        }
+        otherwise => {
+            eprintln!("Unrecognized subcommand \"{otherwise}\".")
+        }
     }
 
     match save_tasks(&file_path, task_manager) {
