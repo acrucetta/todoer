@@ -1,6 +1,6 @@
 use std::io::{self};
 
-use chrono::Local;
+use chrono::{Datelike, Local};
 
 use crate::task::{Priority, Status, Task};
 
@@ -79,7 +79,14 @@ impl TaskManager {
             // assume it is a date in the format of YYYY-MM-DD
             "1" => Local::now().naive_utc().date(),
             "2" => Local::now().naive_utc().date() + chrono::Duration::days(1),
-            "3" => Local::now().naive_utc().date() + chrono::Duration::weeks(1),
+            "3" => {
+                let today = Local::now().naive_utc().date();
+                let next_friday = today
+                    + chrono::Duration::days(
+                        (11 - today.weekday().num_days_from_monday() as i64) % 7,
+                    );
+                next_friday
+            }
             "4" => chrono::NaiveDate::from_ymd_opt(2023, 12, 31).unwrap(),
             _ => match chrono::NaiveDate::parse_from_str(
                 &TaskManager::get_input("\nDue Date (YYYY-MM-DD)", None),
@@ -155,35 +162,14 @@ impl TaskManager {
                 }
             }
             if let Some(due) = &filters.due {
-                let due_yymmdd = match due.as_str() {
-                    "today" => Local::now().naive_utc().date(),
-                    "tomorrow" => Local::now().naive_utc().date() + chrono::Duration::days(1),
-                    "thisweek" => {
-                        // Due this week is defined as until the end of the weekday (Friday)
-                        // We want to take whatever weekday next Friday is
-                        Local::now().naive_utc().date() + chrono::Duration::weeks(1)
-                    }
-                    "sometime" => {
-                        // Sometime is defined as the end of the year
-                        chrono::NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()
-                    }
-                    _ => {
-                        // If we get here, we have a custom date
-                        // We will parse it and use it
-                        match chrono::NaiveDate::parse_from_str(due, "%Y-%m-%d") {
-                            Ok(date) => date,
-                            Err(_) => {
-                                // If we get here, we have an invalid date
-                                // We will set it to sometime
-                                chrono::NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()
-                            }
-                        }
-                    }
+                let due_yymmdd = match chrono::NaiveDate::parse_from_str(due, "%Y-%m-%d") {
+                    Ok(date) => date,
+                    Err(_) => chrono::NaiveDate::from_ymd_opt(2023, 12, 31).unwrap(),
                 };
                 if task.due != due_yymmdd {
                     found = false;
                 }
-            }
+            };
             if let Some(priority) = &filters.priority {
                 if !priority.contains(&task.priority.to_string()) {
                     found = false;
